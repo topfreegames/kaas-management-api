@@ -40,7 +40,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: manager
-    namespace: default
+    namespace: manager
 roleRef:
   kind: ClusterRole
   name: cluster-admin
