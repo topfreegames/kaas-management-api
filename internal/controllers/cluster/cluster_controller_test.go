@@ -54,4 +54,3 @@ func TestClusterHandler(t *testing.T) {
 		})
 	}
 }
-

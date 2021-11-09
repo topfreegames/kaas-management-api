@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/topfreegames/kaas-management-api/internal/server"
+
 	"log"
 )
 
