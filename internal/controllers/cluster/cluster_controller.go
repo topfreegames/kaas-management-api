@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	v1 "github.com/topfreegames/kaas-management-api/apis/cluster/v1"
 )
+
 // ClusterHandler - returns a cluster status
 func ClusterHandler(c *gin.Context) {
 	clusterName := c.Param("name")
