@@ -125,3 +125,5 @@ fabric.properties
 
 # go build directory
 build/
+
+tilt_modules/
