@@ -33,6 +33,6 @@ docker_build_with_restart('manager:test',
              ]
 )
 
-k8s_yaml('.kubernetes/prod/manifest.yaml')
+k8s_yaml('.kubernetes/dev/manifest.yaml')
 
 k8s_resource('manager', port_forwards=8080)
