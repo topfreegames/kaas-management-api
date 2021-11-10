@@ -1,4 +1,4 @@
-package healthCheck
+package controller
 
 import (
 	"encoding/json"

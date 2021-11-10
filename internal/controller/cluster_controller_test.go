@@ -1,4 +1,4 @@
-package cluster
+package controller
 
 import (
 	"encoding/json"
@@ -43,7 +43,7 @@ func TestClusterHandler(t *testing.T) {
 	}
 
 	router := gin.Default()
-	router.GET("/cluster/:name", ClusterHandler)
+	//router.GET("/cluster/:name", ClusterHandler)
 	for testMsg, testCase := range tests {
 		t.Run(testMsg, func(t *testing.T) {
 			w := testCase.Request.Run(router)
