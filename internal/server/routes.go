@@ -2,9 +2,10 @@ package server
 
 import (
 	"fmt"
+
 	"github.com/gin-gonic/gin"
-	clusterv1 "github.com/topfreegames/kaas-management-api/apis/cluster/v1"
-	healthCheckv1 "github.com/topfreegames/kaas-management-api/apis/healthCheck"
+	clusterv1 "github.com/topfreegames/kaas-management-api/api/cluster/v1"
+	healthCheckv1 "github.com/topfreegames/kaas-management-api/api/healthCheck"
 	"github.com/topfreegames/kaas-management-api/internal/controller"
 )
 
