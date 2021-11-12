@@ -6,7 +6,7 @@ import (
 	"sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/gin-gonic/gin"
-	v1 "github.com/topfreegames/kaas-management-api/apis/cluster/v1"
+	v1 "github.com/topfreegames/kaas-management-api/api/cluster/v1"
 )
 
 // ClusterHandler - returns a cluster status

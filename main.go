@@ -8,7 +8,6 @@ import (
 )
 
 func main() {
-
 	k8sClient := k8s.CreateK8sInstance()
 	err := server.InitServer(k8sClient)
 	if err != nil {

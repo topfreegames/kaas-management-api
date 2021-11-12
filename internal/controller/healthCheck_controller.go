@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/topfreegames/kaas-management-api/apis/healthCheck"
+    "github.com/topfreegames/kaas-management-api/api/healthCheck"
 	"net/http"
 )
 

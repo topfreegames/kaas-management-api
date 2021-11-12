@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	v1 "github.com/topfreegames/kaas-management-api/apis/cluster/v1"
+    v1 "github.com/topfreegames/kaas-management-api/api/cluster/v1"
 	"github.com/topfreegames/kaas-management-api/test"
 	"net/http"
 	"testing"
