@@ -28,4 +28,7 @@ func (r RouterConfig) setupClusterV1Routes() {
 	group := r.router.Group(fmt.Sprintf("%s/%s", clusterv1.Version, clusterv1.Endpoint))
 	group.Handle("GET", "/", r.controller.ClusterListHandler)
 	group.Handle("GET", "/:clusterName", r.controller.ClusterHandler)
+
+	group.Handle("GET", "/:clusterName/nodeGroup", r.controller.NodeGroupListByClusterHandler)
+	group.Handle("GET", "/:clusterName/nodeGroup/:nodeGroupName", r.controller.NodeGroupByClusterHandler)
 }
