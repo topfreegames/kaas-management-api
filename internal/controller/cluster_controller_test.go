@@ -1,13 +1,14 @@
-package cluster
+package controller
 
 import (
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
-	v1 "github.com/topfreegames/kaas-management-api/apis/cluster/v1"
-	"github.com/topfreegames/kaas-management-api/test"
 	"net/http"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	v1 "github.com/topfreegames/kaas-management-api/api/cluster/v1"
+	"github.com/topfreegames/kaas-management-api/test"
 )
 
 func TestClusterHandler(t *testing.T) {
@@ -43,7 +44,7 @@ func TestClusterHandler(t *testing.T) {
 	}
 
 	router := gin.Default()
-	router.GET("/cluster/:name", ClusterHandler)
+	//router.GET("/cluster/:name", ClusterHandler)
 	for testMsg, testCase := range tests {
 		t.Run(testMsg, func(t *testing.T) {
 			w := testCase.Request.Run(router)
