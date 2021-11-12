@@ -1,9 +1,10 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/topfreegames/kaas-management-api/apis/healthCheck"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/topfreegames/kaas-management-api/api/healthCheck"
 )
 
 // HealthCheckHandler - returns health status of the API
