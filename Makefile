@@ -24,10 +24,11 @@ wait-cluster-api-resources:
 	bash ./scripts/wait-cluster-api.sh
 
 create-cluster:
+	kubectl create ns capi-quickstart && \
 	clusterctl generate cluster capi-quickstart --flavor development \
    		--kubernetes-version v1.22.0 \
     	--control-plane-machine-count=3 \
-    	--worker-machine-count=3 | kubectl apply -f -
+    	--worker-machine-count=3 -n capi-quickstart | kubectl apply -f -
 
 init-tilt:
 	kind export kubeconfig --name kaas-cluster
