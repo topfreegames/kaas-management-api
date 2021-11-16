@@ -51,7 +51,7 @@ func (k Kubernetes) ListClusters() (clusterapiv1beta1.ClusterList, error) {
 	clustersRaw, err := client.Resource(clusterResource).List(context.TODO(), metav1.ListOptions{})
 
 	if errors.IsNotFound(err) {
-		return clusterapiv1beta1.ClusterList{}, util.NewClientError(err, "Could not find any cluster in the cluster!")
+		return clusterapiv1beta1.ClusterList{}, util.NewClientError(err, "Could not find any cluster in the Kubernetes API!")
 	} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
 		return clusterapiv1beta1.ClusterList{}, fmt.Errorf("Error getting Cluster %v\n", statusError.ErrStatus.Message)
 	} else if err != nil {
