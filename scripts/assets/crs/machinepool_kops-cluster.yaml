@@ -1,0 +1,43 @@
+apiVersion: cluster.x-k8s.io/v1alpha3
+kind: MachinePool
+metadata:
+  name: nodes
+  namespace: kops-cluster
+spec:
+  clusterName: kops-cluster
+  replicas: 0
+  template:
+    spec:
+      bootstrap:
+        dataSecretName: ""
+      clusterName: kops-cluster
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+        kind: KopsMachinePool
+        name: kops-cluster-nodes
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: KopsMachinePool
+metadata:
+  name: nodes
+  namespace: kops-cluster
+spec:
+  kopsInstanceGroupSpec:
+    associatePublicIp: false
+    cloudLabels:
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster/kops-cluster: "true"
+    image: 1234567890/ubuntu-21-04-kubernetes-base-image-v1.0.0
+    machineType: c5.large
+    maxSize: 50
+    minSize: 1
+    nodeLabels:
+      kops.k8s.io/cluster: kops-cluster
+      kops.k8s.io/cluster-name: kops-cluster
+      kops.k8s.io/instance-group-name: nodes
+      kops.k8s.io/instance-group-role: myrole
+      kops.k8s.io/instancegroup: nodes
+    role: Node
+    rootVolumeSize: 60
+    subnets:
+    - sa-east-1c
