@@ -14,7 +14,7 @@ import (
 
 // ClusterHandler - returns a cluster status
 func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
-	clusterName := c.Param("clusterName")
+	clusterName := c.Param(v1.ClusterNameParameter)
 
 	// TODO this shouldn't receive a namespace
 	clusterApiCR, err := controller.K8sInstance.GetCluster(clusterName, "default") // TODO remove hardcode default namespace

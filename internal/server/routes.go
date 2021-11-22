@@ -20,7 +20,7 @@ func (r RouterConfig) setupRoutes() {
 func (r RouterConfig) setupClusterV1Routes() {
 	clusterv1.Endpoint.CreatePrivateRouterGroup(r.router)
 	clusterv1.Endpoint.CreateRoute("GET", "/", r.controller.ClusterListHandler)
-	clusterv1.Endpoint.CreateRoute("GET", "/:name", r.controller.ClusterHandler)
+	clusterv1.Endpoint.CreateRoute("GET", "/:" + clusterv1.ClusterNameParameter, r.controller.ClusterHandler)
 }
 
 func (r RouterConfig) setupHealthCheckRoutes() {
