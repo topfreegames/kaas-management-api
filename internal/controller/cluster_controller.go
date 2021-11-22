@@ -16,8 +16,7 @@ import (
 func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
 	clusterName := c.Param(v1.ClusterNameParameter)
 
-	// TODO this shouldn't receive a namespace
-	clusterApiCR, err := controller.K8sInstance.GetCluster(clusterName, "default") // TODO remove hardcode default namespace
+	clusterApiCR, err := controller.K8sInstance.GetCluster(clusterName)
 	if err != nil {
 		log.Printf("Error getting clusterAPI CR: %v", err)
 		_, ok := err.(*util.ClientError)
@@ -38,7 +37,7 @@ func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
 func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 	var clusterList v1.ClusterList
 
-	clusterApiListCR, err := controller.K8sInstance.ListClusters("")
+	clusterApiListCR, err := controller.K8sInstance.ListClusters()
 	if err != nil {
 		log.Printf("Error getting clusterAPI CR: %v", err)
 		_, ok := err.(util.ClientError)

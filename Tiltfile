@@ -1,5 +1,16 @@
 load('ext://restart_process', 'docker_build_with_restart')
 
+local_resource('Install dependencies',
+               'make init-dependencies'
+)
+
+local_resource('Wait dependencies resources',
+               'make wait-dependencies-resources',
+               resource_deps=[
+                 'Install dependencies'
+               ]
+)
+
 local_resource('Install Cluster API',
                'make init-cluster-api'
 )
@@ -12,7 +23,7 @@ local_resource('Wait Cluster API resources',
 )
 
 local_resource('Populate Cluster',
-               'make create-cluster',
+               'make create-clusters',
                deps=['Makefile'],
                resource_deps=[
                  'Wait Cluster API resources'
