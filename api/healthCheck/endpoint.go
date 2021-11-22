@@ -1,3 +1,5 @@
 package healthCheck
 
-var Endpoint = "healthcheck"
+import "github.com/topfreegames/kaas-management-api/api"
+
+var Endpoint = api.NewApiEndpoint("", "healthcheck")
