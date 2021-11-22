@@ -1,5 +1,4 @@
 package v1
 
-import "github.com/topfreegames/kaas-management-api/api"
-
-var Endpoint = api.NewApiEndpoint("v1", "clusters")
+var Version = "v1"
+var Endpoint = "clusters"

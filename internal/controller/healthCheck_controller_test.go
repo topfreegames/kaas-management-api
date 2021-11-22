@@ -2,12 +2,13 @@ package controller
 
 import (
 	"encoding/json"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
-    healthCheckv1 "github.com/topfreegames/kaas-management-api/api/healthCheck"
-	"github.com/topfreegames/kaas-management-api/test"
 	"net/http"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	healthCheckv1 "github.com/topfreegames/kaas-management-api/api/healthCheck"
+	"github.com/topfreegames/kaas-management-api/test"
 )
 
 func TestHealthCheckHandler(t *testing.T) {

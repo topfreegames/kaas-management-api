@@ -3,6 +3,9 @@ package controller
 import (
 	"log"
 	"net/http"
+
+	"github.com/topfreegames/kaas-management-api/util"
+
 	"sigs.k8s.io/cluster-api/api/v1beta1"
 
 	"github.com/gin-gonic/gin"
@@ -11,12 +14,19 @@ import (
 
 // ClusterHandler - returns a cluster status
 func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
-	clusterName := c.Param("name")
+	clusterName := c.Param("clusterName")
 
-	clusterApiCR, err := controller.K8sInstance.GetCluster(clusterName, "default")
+	// TODO this shouldn't receive a namespace
+	clusterApiCR, err := controller.K8sInstance.GetCluster(clusterName, "default") // TODO remove hardcode default namespace
 	if err != nil {
 		log.Printf("Error getting clusterAPI CR: %v", err)
-		c.JSON(http.StatusNotFound, nil)
+		_, ok := err.(*util.ClientError)
+		if !ok {
+			util.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
+		} else {
+			util.ErrorHandler(c, err, "Cluster not found", http.StatusNotFound)
+		}
+		log.Printf("[ClusterHandler] %v", err)
 		return
 	}
 
@@ -28,13 +38,23 @@ func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
 func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 	var clusterList v1.ClusterList
 
-	clusterApiListCR, _ := controller.K8sInstance.ListClusters("")
+	clusterApiListCR, err := controller.K8sInstance.ListClusters("")
+	if err != nil {
+		log.Printf("Error getting clusterAPI CR: %v", err)
+		_, ok := err.(util.ClientError)
+		if !ok {
+			log.Printf("[ClusterListHandler] %v", err)
+			util.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	}
 
 	for _, clusterApiCR := range clusterApiListCR.Items {
 		cluster := writeClusterV1(clusterApiCR)
 		clusterList.Items = append(clusterList.Items, cluster)
 	}
 
+	// TODO check if we should return StatusOK even with an empty list
 	c.JSON(http.StatusOK, clusterList)
 }
 
