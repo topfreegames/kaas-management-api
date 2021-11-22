@@ -17,18 +17,20 @@ deploy: init-kind init-tilt
 init-kind:
 	bash ./scripts/kind.sh kaas-cluster
 
+init-dependencies:
+	kubectl apply -f ./scripts/assets/crds/dependencies
+
+wait-dependencies-resources:
+	bash ./scripts/wait-controllers.sh dependencies
+
 init-cluster-api:
-	clusterctl init --infrastructure docker
+	kubectl apply -f ./scripts/assets/crds/cluster-api
 
 wait-cluster-api-resources:
-	bash ./scripts/wait-cluster-api.sh
+	bash ./scripts/wait-controllers.sh cluster-api
 
-create-cluster:
-	kubectl create ns capi-quickstart && \
-	clusterctl generate cluster capi-quickstart --flavor development \
-   		--kubernetes-version v1.22.0 \
-    	--control-plane-machine-count=3 \
-    	--worker-machine-count=3 -n capi-quickstart | kubectl apply -f -
+create-clusters:
+	kubectl apply -f ./scripts/assets/crs
 
 init-tilt:
 	kind export kubeconfig --name kaas-cluster
