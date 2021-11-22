@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kops-cluster
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  labels:
+    clusterGroup: test
+    region: us-east-1
+  name: kops-cluster
+  namespace: kops-cluster
+spec:
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
+    kind: KopsControlPlane
+    name: kops-cluster-control-plane
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
+kind: KopsControlPlane
+metadata:
+  name: kops-cluster-control-plane
+  namespace: kops-cluster
+spec:
+  kopsClusterSpec:
+    useHostCertificates: true
+    api:
+      dns: { }
+    authorization:
+      rbac: { }
+    channel: stable
+    cloudProvider: aws
+    configBase: s3://my-kops-state/kops-cluster.example.com
+    etcdClusters:
+      - cpuRequest: 200m
+        etcdMembers:
+          - instanceGroup: master-sa-east-1c
+            name: c
+        memoryRequest: 100Mi
+        name: main
+      - cpuRequest: 100m
+        etcdMembers:
+          - instanceGroup: master-sa-east-1c
+            name: c
+        memoryRequest: 100Mi
+        name: events
+    iam:
+      allowContainerRegistry: true
+      legacy: false
+    kubelet:
+      anonymousAuth: false
+      authenticationTokenWebhook: true
+      authorizationMode: Webhook
+    kubernetesApiAccess:
+      - 0.0.0.0/0
+    kubernetesVersion: 1.16.10
+    masterPublicName: api.kops-cluster.example.com
+    networkCIDR: 172.20.0.0/16
+    networking:
+      kubenet: { }
+    nonMasqueradeCIDR: 100.64.0.0/10
+    sshAccess:
+      - 0.0.0.0/0
+    subnets:
+      - cidr: 172.20.32.0/19
+        name: sa-east-1c
+        type: Public
+        zone: sa-east-1c
+    topology:
+      dns:
+        type: Public
+      masters: public
+      nodes: public
