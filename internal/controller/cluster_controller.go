@@ -14,7 +14,7 @@ import (
 
 // ClusterHandler - returns a cluster status
 func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
-	clusterName := c.Param("clusterName")
+	clusterName := c.Param(v1.ClusterNameParameter)
 
 	clusterApiCR, err := controller.K8sInstance.GetCluster(clusterName)
 	if err != nil {

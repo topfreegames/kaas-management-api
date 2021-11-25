@@ -8,3 +8,4 @@ kubectl rollout status deployment -n cert-manager cert-manager
 kubectl rollout status deployment -n cert-manager cert-manager-cainjector
 kubectl rollout status deployment -n cert-manager cert-manager-webhook
 
+sleep 30

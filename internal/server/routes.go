@@ -1,11 +1,9 @@
 package server
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	clusterv1 "github.com/topfreegames/kaas-management-api/api/cluster/v1"
-	healthCheckv1 "github.com/topfreegames/kaas-management-api/api/healthCheck"
+	"github.com/topfreegames/kaas-management-api/api/healthCheck"
 	"github.com/topfreegames/kaas-management-api/internal/controller"
 )
 
@@ -19,13 +17,13 @@ func (r RouterConfig) setupRoutes() {
 	r.setupHealthCheckRoutes()
 }
 
-func (r RouterConfig) setupHealthCheckRoutes() {
-	r.router.Handle("GET", fmt.Sprintf("/%s", healthCheckv1.Endpoint), controller.HealthCheckHandler)
+func (r RouterConfig) setupClusterV1Routes() {
+	clusterv1.Endpoint.CreatePrivateRouterGroup(r.router)
+	clusterv1.Endpoint.CreateRoute("GET", "/", r.controller.ClusterListHandler)
+	clusterv1.Endpoint.CreateRoute("GET", "/:" + clusterv1.ClusterNameParameter, r.controller.ClusterHandler)
 }
 
-func (r RouterConfig) setupClusterV1Routes() {
-
-	group := r.router.Group(fmt.Sprintf("%s/%s", clusterv1.Version, clusterv1.Endpoint))
-	group.Handle("GET", "/", r.controller.ClusterListHandler)
-	group.Handle("GET", "/:clusterName", r.controller.ClusterHandler)
+func (r RouterConfig) setupHealthCheckRoutes() {
+	healthCheck.Endpoint.CreatePublicRouterGroup(r.router)
+	healthCheck.Endpoint.CreateRoute("GET", "/", controller.HealthCheckHandler)
 }
