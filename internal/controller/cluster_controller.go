@@ -1,10 +1,10 @@
 package controller
 
 import (
+	"github.com/topfreegames/kaas-management-api/internal/k8s"
+	"github.com/topfreegames/kaas-management-api/util/clientError"
 	"log"
 	"net/http"
-
-	"github.com/topfreegames/kaas-management-api/util"
 
 	"sigs.k8s.io/cluster-api/api/v1beta1"
 
@@ -12,55 +12,94 @@ import (
 	v1 "github.com/topfreegames/kaas-management-api/api/cluster/v1"
 )
 
-// ClusterHandler - returns a cluster status
+// ClusterHandler - returns a cluster information
 func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
 	clusterName := c.Param(v1.ClusterNameParameter)
 
 	clusterApiCR, err := controller.K8sInstance.GetCluster(clusterName)
 	if err != nil {
 		log.Printf("Error getting clusterAPI CR: %v", err)
-		_, ok := err.(*util.ClientError)
+		clientErr, ok := err.(*clientError.ClientError)
 		if !ok {
-			util.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
+			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
 		} else {
-			util.ErrorHandler(c, err, "Cluster not found", http.StatusNotFound)
+			if clientErr.ErrorMessage == clientError.ResourceNotFound {
+				clientError.ErrorHandler(c, err, "Cluster not found", http.StatusNotFound)
+			}
 		}
 		log.Printf("[ClusterHandler] %v", err)
 		return
 	}
 
-	cluster := writeClusterV1(clusterApiCR)
+	controlPlane, err := controller.K8sInstance.GetControlPlane(clusterApiCR.Spec.ControlPlaneRef.Kind)
+	if err != nil {
+		log.Printf("Error getting cluster controlplane for cluster %s: %v", clusterApiCR.Name, err.Error())
+		clientError.ErrorHandler(c, err, "Could not get cluster control plane resource", http.StatusInternalServerError)
+	}
+	infrastructure, err := controller.K8sInstance.GetClusterInfrastructure(clusterApiCR.Spec.InfrastructureRef.Kind)
+	if err != nil {
+		log.Printf("Error getting cluster infrastructure for %s: %v", clusterApiCR.Name, err.Error())
+		clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	cluster := writeClusterV1(clusterApiCR, controlPlane, infrastructure)
 	c.JSON(http.StatusOK, cluster)
 }
 
-// ClusterListHandler - returns a list of clusters status
+// ClusterListHandler - returns a list of clusters with the information
 func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 	var clusterList v1.ClusterList
 
 	clusterApiListCR, err := controller.K8sInstance.ListClusters()
 	if err != nil {
 		log.Printf("Error getting clusterAPI CR: %v", err)
-		_, ok := err.(util.ClientError)
+		clientErr, ok := err.(*clientError.ClientError)
 		if !ok {
 			log.Printf("[ClusterListHandler] %v", err)
-			util.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
+			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
 			return
+		} else {
+			if clientErr.ErrorMessage == clientError.ResourceNotFound {
+				clientError.ErrorHandler(c, err, "Cluster not found", http.StatusNotFound)
+			}
 		}
 	}
 
 	for _, clusterApiCR := range clusterApiListCR.Items {
-		cluster := writeClusterV1(clusterApiCR)
+		controlPlane, err := controller.K8sInstance.GetControlPlane(clusterApiCR.Spec.ControlPlaneRef.Kind)
+		if err != nil {
+			log.Printf("Error getting cluster controlplane for cluster %s: %v", clusterApiCR.Name, err.Error())
+			//clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
+			continue
+		}
+
+		infrastructure, err := controller.K8sInstance.GetClusterInfrastructure(clusterApiCR.Spec.InfrastructureRef.Kind)
+		if err != nil {
+			log.Printf("Error getting cluster infrastructure for %s: %v", clusterApiCR.Name, err.Error())
+			//clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
+			continue
+		}
+		cluster := writeClusterV1(clusterApiCR, controlPlane, infrastructure)
 		clusterList.Items = append(clusterList.Items, cluster)
 	}
 
-	// TODO check if we should return StatusOK even with an empty list
+	if len(clusterList.Items) == 0 {
+		err := clientError.NewClientError(nil, clientError.EmptyResponse, "No Clusters were found")
+		clientErr := err.(*clientError.ClientError)
+		clientError.ErrorHandler(c, err, clientErr.ErrorDetailedMessage, http.StatusNotFound)
+		return
+	}
+
 	c.JSON(http.StatusOK, clusterList)
 }
 
 // TODO better function name
-func writeClusterV1(clusterApiCR v1beta1.Cluster) v1.Cluster {
+// writeClusterV1 Write the response of the cluster version 1 endpoint
+func writeClusterV1(clusterApiCR v1beta1.Cluster, controlPlane *k8s.ControlPlane, infrastructure *k8s.ClusterInfrastructure) v1.Cluster {
 	cluster := v1.Cluster{
-		Name: clusterApiCR.Name,
+		Name:      clusterApiCR.Name,
+		ApiServer: clusterApiCR.Spec.ClusterNetwork.ServiceDomain,
 		// TODO, load this mapping from config (kubernetes CR for the management API)
 		Metadata: map[string]interface{}{
 			"clusterGroup": clusterApiCR.Labels["clusterGroup"],
@@ -68,30 +107,8 @@ func writeClusterV1(clusterApiCR v1beta1.Cluster) v1.Cluster {
 			"environment":  clusterApiCR.Labels["environment"],
 			"CIDR":         clusterApiCR.Spec.ClusterNetwork.Services.CIDRBlocks,
 		},
-		KubeProvider:           getKubeProvider(clusterApiCR),
-		InfrastructureProvider: getInfrastructureProvider(clusterApiCR),
+		KubeProvider:           controlPlane.Provider,
+		InfrastructureProvider: infrastructure.Provider,
 	}
 	return cluster
-}
-
-// TODO some enum/dict with supported providers and the kind names
-func getKubeProvider(cluster v1beta1.Cluster) string {
-	controlplaneProvider := cluster.Spec.ControlPlaneRef.Kind
-
-	if controlplaneProvider == "KubeadmControlPlane" {
-		return "KubeAdm"
-	}
-
-	return "Undefined"
-}
-
-// TODO some enum/dict with supported providers and the kind names
-func getInfrastructureProvider(cluster v1beta1.Cluster) string {
-	controlplaneProvider := cluster.Spec.InfrastructureRef.Kind
-
-	if controlplaneProvider == "DockerCluster" {
-		return "Docker"
-	}
-
-	return "Undefined"
 }
