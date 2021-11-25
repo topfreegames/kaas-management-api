@@ -1,4 +1,4 @@
-package util
+package error
 
 import (
 	"github.com/gin-gonic/gin"
