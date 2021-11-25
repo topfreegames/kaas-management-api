@@ -19,27 +19,16 @@ type NodeInfrastructure struct {
 	Spec        interface{}
 }
 
-func (k Kubernetes) GetInfrastructure(clusterName, infrastructureKind string, infrastructureName string) (*Infrastructure, error) {
-	var infrastructure *Infrastructure
+// GetNodeInfrastructure returns a nodegroup infrastructure resource in a generic format using the NodeInfrastructure struct
+func (k Kubernetes) GetNodeInfrastructure(clusterName, infrastructureKind string, infrastructureName string) (*NodeInfrastructure, error) {
+	var infrastructure *NodeInfrastructure
 
 	switch infrastructureKind {
-	case "DockerCluster":
-		// DockerMachine api is a test resource for cluster-api, it api code breaks often so there's no reason to really use it.
-		// TODO: Fork the official repo, fix the go.mod and implement to be used in our tests
-		infrastructure = &Infrastructure{
-			Provider: "Docker",
-			Az: []string{
-				"local",
-			},
-			MachineType: "container",
-			Spec:        nil,
-		}
-
 	case "DockerMachineTemplate":
 		// DockerMachine api is a test resource for cluster-api, it api code breaks often so there's no reason to really use it.
 		// TODO: Fork the official repo, fix the go.mod and implement to be used in our tests
-		infrastructure = &Infrastructure{
-			Provider: "Docker",
+		infrastructure = &NodeInfrastructure{
+			Provider: "docker",
 			Az: []string{
 				"local",
 			},
@@ -56,7 +45,7 @@ func (k Kubernetes) GetInfrastructure(clusterName, infrastructureKind string, in
 			}
 			return nil, clientError.NewClientError(err, clientErr.ErrorMessage, fmt.Sprintf("Could not retrieve the infrastructure: %v", clientErr.ErrorDetailedMessage))
 		}
-		infrastructure = &Infrastructure{
+		infrastructure = &NodeInfrastructure{
 			Provider:    "kops",
 			Az:          kops.Spec.KopsInstanceGroupSpec.Subnets,
 			MachineType: kops.Spec.KopsInstanceGroupSpec.MachineType,
@@ -72,6 +61,7 @@ func (k Kubernetes) GetInfrastructure(clusterName, infrastructureKind string, in
 	return nil, clientError.NewClientError(nil, clientError.KindNotFound, fmt.Sprintf("The Kind %s could not be found", infrastructureKind))
 }
 
+// GetMachineDeployment Returns a KopsMachinepool CR from a specific cluster
 func (k Kubernetes) GetKopsMachinePool(clusterName string, infrastructureName string) (*clusterapikopsv1alpha1.KopsMachinePool, error) {
 	client := k.K8sAuth.DynamicClient
 

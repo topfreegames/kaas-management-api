@@ -35,3 +35,7 @@ create-clusters:
 init-tilt:
 	kind export kubeconfig --name kaas-cluster
 	tilt up
+
+tilt-ci:
+	kind export kubeconfig --name kaas-cluster
+	tilt ci
