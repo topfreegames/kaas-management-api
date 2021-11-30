@@ -1,18 +1,16 @@
 package test
 
 import (
-	"github.com/topfreegames/kaas-management-api/internal/k8s"
 	"io"
-	"k8s.io/client-go/dynamic/fake"
+	"log"
 	"net/http"
 	"net/http/httptest"
 )
 
-// HTTPTestCase Default template structure for table driven test
-type HTTPTestCase struct {
+// HTTPTestExpectedResponse
+type HTTPTestExpectedResponse struct {
 	ExpectedBody interface{}
 	ExpectedCode int
-	Request      *HTTPTestRequest
 }
 
 // HTTPTestRequest Represents an Mock of HTTP request
@@ -22,18 +20,19 @@ type HTTPTestRequest struct {
 	Path   string
 }
 
+// GetK8sRequest returns the request of the test as an instance of the struct *HTTPTestRequest
+func (t TestCase) GetHTTPRequest() *HTTPTestRequest {
+	request, ok := t.Request.(*HTTPTestRequest)
+	if !ok {
+		log.Fatalf("Could not convert TestCase %s Request to HTTPTestRequest", t.Name)
+	}
+	return request
+}
+
 // RunHTTPTest executes the Cases
 func (r *HTTPTestRequest) RunHTTPTest(handler http.Handler) *httptest.ResponseRecorder {
 	req, _ := http.NewRequest(r.Method, r.Path, r.Body)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	return w
-}
-
-func NewFakeKubernetesClient() *k8s.Kubernetes{
-	fakeClient := fake.FakeDynamicClient{}
-	k := &k8s.Kubernetes{K8sAuth: &k8s.Auth{
-		DynamicClient: &fakeClient,
-	}}
-	return k
 }

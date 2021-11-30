@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/topfreegames/kaas-management-api/internal/k8s"
 	"github.com/topfreegames/kaas-management-api/util/clientError"
 	"log"
@@ -80,7 +81,7 @@ func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 			//clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
 			continue
 		}
-		cluster := writeClusterV1(clusterApiCR, controlPlane, infrastructure)
+		cluster := writeClusterV1(&clusterApiCR, controlPlane, infrastructure)
 		clusterList.Items = append(clusterList.Items, cluster)
 	}
 
@@ -96,10 +97,12 @@ func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 
 // TODO better function name
 // writeClusterV1 Write the response of the cluster version 1 endpoint
-func writeClusterV1(clusterApiCR v1beta1.Cluster, controlPlane *k8s.ControlPlane, infrastructure *k8s.ClusterInfrastructure) v1.Cluster {
+func writeClusterV1(clusterApiCR *v1beta1.Cluster, controlPlane *k8s.ControlPlane, infrastructure *k8s.ClusterInfrastructure) v1.Cluster {
+	apiEndpoint := fmt.Sprintf("https://%s:%d", clusterApiCR.Spec.ControlPlaneEndpoint.Host, clusterApiCR.Spec.ControlPlaneEndpoint.Port)
+
 	cluster := v1.Cluster{
 		Name:      clusterApiCR.Name,
-		ApiServer: clusterApiCR.Spec.ClusterNetwork.ServiceDomain,
+		ApiServer: apiEndpoint,
 		// TODO, load this mapping from config (kubernetes CR for the management API)
 		Metadata: map[string]interface{}{
 			"clusterGroup": clusterApiCR.Labels["clusterGroup"],

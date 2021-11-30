@@ -15,7 +15,7 @@ func Test_GetClusterInfrastructure_Success(t *testing.T) {
 			ExpectedSuccess: &ClusterInfrastructure{
 				Provider: "kops",
 			},
-			ExpectedError: nil,
+			ExpectedClientError: nil,
 			Request: &test.K8sRequest{
 				ResourceKind: "KopsAWSCluster",
 			},
@@ -25,7 +25,7 @@ func Test_GetClusterInfrastructure_Success(t *testing.T) {
 			ExpectedSuccess: &ClusterInfrastructure{
 				Provider: "docker",
 			},
-			ExpectedError: nil,
+			ExpectedClientError: nil,
 			Request: &test.K8sRequest{
 				ResourceKind: "DockerCluster",
 			},
@@ -53,10 +53,10 @@ func Test_GetClusterInfrastructure_ErrorKindNotFound(t *testing.T) {
 	testCase := test.TestCase{
 		Name:            "GetClusterInfrastructure should return Kind not found",
 		ExpectedSuccess: nil,
-		ExpectedError: &clientError.ClientError{
+		ExpectedClientError: &clientError.ClientError{
 			ErrorCause:           nil,
 			ErrorDetailedMessage: "The Kind NonExistentKind could not be found",
-			ErrorMessage:         "KIND_NOT_FOUND",
+			ErrorMessage:         clientError.KindNotFound,
 		},
 		Request: &test.K8sRequest{
 			ResourceKind: "NonExistentKind",
@@ -72,7 +72,7 @@ func Test_GetClusterInfrastructure_ErrorKindNotFound(t *testing.T) {
 
 	t.Run(testCase.Name, func(t *testing.T) {
 		_, err := k.GetControlPlane(request.ResourceKind)
-		assert.ErrorContains(t, err, testCase.ExpectedError.Error())
-		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedError))
+		assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
+		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 	})
 }

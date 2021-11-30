@@ -4,7 +4,6 @@ import (
 	clusterapikopsv1alpha1 "github.com/topfreegames/kubernetes-kops-operator/apis/infrastructure/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/kops/pkg/apis/kops/v1alpha2"
@@ -41,15 +40,51 @@ func NewK8sFakeDynamicClientWithResources(resources ...runtime.Object) *fake.Fak
 	return client
 }
 
-func NewK8sFakeDynamicClientWithResource(resource interface{}) *fake.FakeDynamicClient {
-	generic, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&resource)
-	if err != nil {
-		log.Fatalf("Error generating unstructured: %v", err)
+func NewTestCluster(name string, controlPlaneName string, controPlaneKind string, controlPlaneApiVersion string, infrastructureName string, infrastructureKind string, infrastructureApiVersion string) *clusterapiv1beta1.Cluster {
+	testResource := clusterapiv1beta1.Cluster{
+		TypeMeta: v1.TypeMeta{
+			Kind:       "Cluster",
+			APIVersion: "cluster.x-k8s.io/v1beta1",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      name,
+			Namespace: name,
+			Labels: map[string]string{
+				"region":       "us-east-1",
+				"environment":  "test",
+				"clusterGroup": "test-clusters",
+			},
+			ClusterName: name,
+		},
+		Spec: clusterapiv1beta1.ClusterSpec{
+			Paused: false,
+			ClusterNetwork: &clusterapiv1beta1.ClusterNetwork{
+				APIServerPort: nil,
+				Services:      &clusterapiv1beta1.NetworkRanges{CIDRBlocks: []string{"192.168.0.0/24"}},
+				Pods:          &clusterapiv1beta1.NetworkRanges{CIDRBlocks: []string{"10.0.0.0/16"}},
+				ServiceDomain: "cluster.local",
+			},
+			ControlPlaneEndpoint: clusterapiv1beta1.APIEndpoint{
+				Host: "api." + name + ".cluster.example.com",
+				Port: 443,
+			},
+			ControlPlaneRef: &corev1.ObjectReference{
+				Kind:       controPlaneKind,
+				Namespace:  name,
+				Name:       controlPlaneName,
+				APIVersion: controlPlaneApiVersion,
+			},
+			InfrastructureRef: &corev1.ObjectReference{
+				Kind:       infrastructureKind,
+				Namespace:  name,
+				Name:       infrastructureName,
+				APIVersion: infrastructureApiVersion,
+			},
+		},
+		Status: clusterapiv1beta1.ClusterStatus{},
 	}
-	Unstructured := &unstructured.Unstructured{}
-	Unstructured.SetUnstructuredContent(generic)
-	client := fake.NewSimpleDynamicClient(runtime.NewScheme(), Unstructured)
-	return client
+
+	return &testResource
 }
 
 func NewTestKopsMachinePool(name string, clusterName string) *clusterapikopsv1alpha1.KopsMachinePool {
@@ -79,7 +114,7 @@ func NewTestKopsMachinePool(name string, clusterName string) *clusterapikopsv1al
 func NewTestMachinePool(name string, clusterName string, infrastructureKind string, infrastructureName string, infrastructureApiVersion string) *clusterapiexpv1beta1.MachinePool {
 
 	testResource := clusterapiexpv1beta1.MachinePool{
-		TypeMeta:   v1.TypeMeta{
+		TypeMeta: v1.TypeMeta{
 			Kind:       "MachinePool",
 			APIVersion: "cluster.x-k8s.io/v1beta1",
 		},
@@ -88,24 +123,24 @@ func NewTestMachinePool(name string, clusterName string, infrastructureKind stri
 			Namespace:   clusterName,
 			ClusterName: clusterName,
 		},
-		Spec:       clusterapiexpv1beta1.MachinePoolSpec{
-			ClusterName:     clusterName,
-			Replicas:        nil,
-			Template:        clusterapiv1beta1.MachineTemplateSpec{
+		Spec: clusterapiexpv1beta1.MachinePoolSpec{
+			ClusterName: clusterName,
+			Replicas:    nil,
+			Template: clusterapiv1beta1.MachineTemplateSpec{
 				ObjectMeta: clusterapiv1beta1.ObjectMeta{},
-				Spec:       clusterapiv1beta1.MachineSpec{
-					ClusterName:       clusterName,
-					Bootstrap:         clusterapiv1beta1.Bootstrap{},
+				Spec: clusterapiv1beta1.MachineSpec{
+					ClusterName: clusterName,
+					Bootstrap:   clusterapiv1beta1.Bootstrap{},
 					InfrastructureRef: corev1.ObjectReference{
-						Kind:            infrastructureKind,
-						Namespace:       clusterName,
-						Name:            infrastructureName,
-						APIVersion:      infrastructureApiVersion,
+						Kind:       infrastructureKind,
+						Namespace:  clusterName,
+						Name:       infrastructureName,
+						APIVersion: infrastructureApiVersion,
 					},
 				},
 			},
 		},
-		Status:     clusterapiexpv1beta1.MachinePoolStatus{},
+		Status: clusterapiexpv1beta1.MachinePoolStatus{},
 	}
 
 	return &testResource
@@ -114,7 +149,7 @@ func NewTestMachinePool(name string, clusterName string, infrastructureKind stri
 func NewTestMachineDeployment(name string, clusterName string, infrastructureKind string, infrastructureName string, infrastructureApiVersion string) *clusterapiv1beta1.MachineDeployment {
 
 	testResource := clusterapiv1beta1.MachineDeployment{
-		TypeMeta:   v1.TypeMeta{
+		TypeMeta: v1.TypeMeta{
 			Kind:       "MachineDeployment",
 			APIVersion: "cluster.x-k8s.io/v1beta1",
 		},
@@ -123,31 +158,31 @@ func NewTestMachineDeployment(name string, clusterName string, infrastructureKin
 			Namespace:   clusterName,
 			ClusterName: clusterName,
 		},
-		Spec:       clusterapiv1beta1.MachineDeploymentSpec{
-			ClusterName:             clusterName,
-			Replicas:                nil,
-			Template:                clusterapiv1beta1.MachineTemplateSpec{
+		Spec: clusterapiv1beta1.MachineDeploymentSpec{
+			ClusterName: clusterName,
+			Replicas:    nil,
+			Template: clusterapiv1beta1.MachineTemplateSpec{
 				ObjectMeta: clusterapiv1beta1.ObjectMeta{},
-				Spec:       clusterapiv1beta1.MachineSpec{
-					ClusterName:       clusterName,
-					Bootstrap:         clusterapiv1beta1.Bootstrap{
-						ConfigRef:      &corev1.ObjectReference{
-							Kind:            "KubeadmConfigTemplate",
-							Namespace:       clusterName,
-							Name:            name,
-							APIVersion:      "bootstrap.cluster.x-k8s.io/v1beta1",
+				Spec: clusterapiv1beta1.MachineSpec{
+					ClusterName: clusterName,
+					Bootstrap: clusterapiv1beta1.Bootstrap{
+						ConfigRef: &corev1.ObjectReference{
+							Kind:       "KubeadmConfigTemplate",
+							Namespace:  clusterName,
+							Name:       name,
+							APIVersion: "bootstrap.cluster.x-k8s.io/v1beta1",
 						},
 					},
 					InfrastructureRef: corev1.ObjectReference{
-						Kind:            infrastructureKind,
-						Namespace:       clusterName,
-						Name:            infrastructureName,
-						APIVersion:      infrastructureApiVersion,
+						Kind:       infrastructureKind,
+						Namespace:  clusterName,
+						Name:       infrastructureName,
+						APIVersion: infrastructureApiVersion,
 					},
 				},
 			},
 		},
-		Status:     clusterapiv1beta1.MachineDeploymentStatus{},
+		Status: clusterapiv1beta1.MachineDeploymentStatus{},
 	}
 
 	return &testResource

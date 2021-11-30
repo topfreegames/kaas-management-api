@@ -30,7 +30,7 @@ func Test_GetNodeInfrastructure_Success(t *testing.T) {
 					Subnets:     []string{"us-east-1a"},
 				}},
 		},
-		ExpectedError: nil,
+		ExpectedClientError: nil,
 		Request: &test.K8sRequest{
 			ResourceName: "kops-test",
 			ResourceKind: "KopsMachinePool",
@@ -60,10 +60,10 @@ func Test_GetNodeInfrastructure_ErrorResourceNotFound(t *testing.T) {
 	testCase := test.TestCase{
 		Name:            "GetNodeInfrastructure should return resource not found error",
 		ExpectedSuccess: nil,
-		ExpectedError: &clientError.ClientError{
+		ExpectedClientError: &clientError.ClientError{
 			ErrorCause:           nil,
 			ErrorDetailedMessage: "Could not retrieve the infrastructure",
-			ErrorMessage:         "RESOURCE_NOT_FOUND",
+			ErrorMessage:         clientError.ResourceNotFound,
 		},
 		Request: &test.K8sRequest{
 			ResourceName: "NonExistentResource",
@@ -84,8 +84,8 @@ func Test_GetNodeInfrastructure_ErrorResourceNotFound(t *testing.T) {
 
 	t.Run(testCase.Name, func(t *testing.T) {
 		_, err := k.GetNodeInfrastructure(request.Cluster, request.ResourceKind, request.ResourceName)
-		assert.ErrorContains(t, err, testCase.ExpectedError.Error())
-		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedError))
+		assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
+		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 	})
 }
 
@@ -93,10 +93,10 @@ func Test_GetNodeInfrastructure_ErrorResourceNotFoundForCluster(t *testing.T) {
 	testCase := test.TestCase{
 		Name:            "GetNodeInfrastructure should return resource not found error for non-existent cluster",
 		ExpectedSuccess: nil,
-		ExpectedError: &clientError.ClientError{
+		ExpectedClientError: &clientError.ClientError{
 			ErrorCause:           nil,
 			ErrorDetailedMessage: "Could not retrieve the infrastructure",
-			ErrorMessage:         "RESOURCE_NOT_FOUND",
+			ErrorMessage:         clientError.ResourceNotFound,
 		},
 		Request: &test.K8sRequest{
 			ResourceName: "test-kops",
@@ -117,8 +117,8 @@ func Test_GetNodeInfrastructure_ErrorResourceNotFoundForCluster(t *testing.T) {
 
 	t.Run(testCase.Name, func(t *testing.T) {
 		_, err := k.GetNodeInfrastructure(request.Cluster, request.ResourceKind, request.ResourceName)
-		assert.ErrorContains(t, err, testCase.ExpectedError.Error())
-		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedError))
+		assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
+		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 	})
 }
 
@@ -126,10 +126,10 @@ func Test_GetNodeInfrastructure_ErrorKindNotFound(t *testing.T) {
 	testCase := test.TestCase{
 		Name:            "GetNodeInfrastructure should return Kind not found",
 		ExpectedSuccess: nil,
-		ExpectedError: &clientError.ClientError{
+		ExpectedClientError: &clientError.ClientError{
 			ErrorCause:           nil,
 			ErrorDetailedMessage: "The Kind NonExistentKind could not be found",
-			ErrorMessage:         "KIND_NOT_FOUND",
+			ErrorMessage:         clientError.KindNotFound,
 		},
 		Request: &test.K8sRequest{
 			ResourceName: "kops-test",
@@ -147,16 +147,16 @@ func Test_GetNodeInfrastructure_ErrorKindNotFound(t *testing.T) {
 
 	t.Run(testCase.Name, func(t *testing.T) {
 		_, err := k.GetNodeInfrastructure(request.Cluster, request.ResourceKind, request.ResourceName)
-		assert.ErrorContains(t, err, testCase.ExpectedError.Error())
-		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedError))
+		assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
+		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 	})
 }
 
 func Test_GetKopsMachinePool_Success(t *testing.T) {
 	testCase := test.TestCase{
-		Name:            "GetKopsMachinePool should return Success for a KopsMachinePool",
-		ExpectedSuccess: test.NewTestKopsMachinePool("myMachinePool", "mycluster"),
-		ExpectedError:   nil,
+		Name:                "GetKopsMachinePool should return Success for a KopsMachinePool",
+		ExpectedSuccess:     test.NewTestKopsMachinePool("myMachinePool", "mycluster"),
+		ExpectedClientError: nil,
 		Request: &test.K8sRequest{
 			ResourceName: "myMachinePool",
 			Cluster:      "mycluster",
@@ -185,10 +185,10 @@ func Test_GetKopsMachinePool_ErrorResourceNotFound(t *testing.T) {
 	testCase := test.TestCase{
 		Name:            "GetKopsMachinePool should return Error for a non-existent machinePool",
 		ExpectedSuccess: nil,
-		ExpectedError: &clientError.ClientError{
+		ExpectedClientError: &clientError.ClientError{
 			ErrorCause:           nil,
 			ErrorDetailedMessage: "The requested KopsMachinePool NonExistentMachinePool was not found in namespace mycluster!",
-			ErrorMessage:         "RESOURCE_NOT_FOUND",
+			ErrorMessage:         clientError.ResourceNotFound,
 		},
 		Request: &test.K8sRequest{
 			ResourceName: "NonExistentMachinePool",
@@ -208,8 +208,8 @@ func Test_GetKopsMachinePool_ErrorResourceNotFound(t *testing.T) {
 
 	t.Run(testCase.Name, func(t *testing.T) {
 		_, err := k.GetKopsMachinePool(request.Cluster, request.ResourceName)
-		assert.ErrorContains(t, err, testCase.ExpectedError.Error())
-		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedError))
+		assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
+		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 	})
 }
 
@@ -217,10 +217,10 @@ func Test_GetKopsMachinePool_ErrorResourceNotFoundNonExistentCluster(t *testing.
 	testCase := test.TestCase{
 		Name:            "GetKopsMachinePool should return Error for a non-existent cluster",
 		ExpectedSuccess: nil,
-		ExpectedError: &clientError.ClientError{
+		ExpectedClientError: &clientError.ClientError{
 			ErrorCause:           nil,
 			ErrorDetailedMessage: "The requested KopsMachinePool ExistentResource was not found in namespace NonExistentCluster!",
-			ErrorMessage:         "RESOURCE_NOT_FOUND",
+			ErrorMessage:         clientError.ResourceNotFound,
 		},
 		Request: &test.K8sRequest{
 			ResourceName: "ExistentResource",
@@ -240,7 +240,7 @@ func Test_GetKopsMachinePool_ErrorResourceNotFoundNonExistentCluster(t *testing.
 
 	t.Run(testCase.Name, func(t *testing.T) {
 		_, err := k.GetKopsMachinePool(request.Cluster, request.ResourceName)
-		assert.ErrorContains(t, err, testCase.ExpectedError.Error())
-		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedError))
+		assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
+		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 	})
 }

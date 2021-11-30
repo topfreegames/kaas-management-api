@@ -11,17 +11,17 @@ import (
 func Test_GetControlPlane_Success(t *testing.T) {
 	testCases := []test.TestCase{
 		{
-			Name:            "GetControlPlane should return Success for kops",
-			ExpectedSuccess: &ControlPlane{Provider: "kops"},
-			ExpectedError:   nil,
+			Name:                "GetControlPlane should return Success for kops",
+			ExpectedSuccess:     &ControlPlane{Provider: "kops"},
+			ExpectedClientError: nil,
 			Request: &test.K8sRequest{
 				ResourceKind: "KopsControlPlane",
 			},
 		},
 		{
-			Name:            "GetControlPlane should return Success for KubeAdm",
-			ExpectedSuccess: &ControlPlane{Provider: "kubeadm"},
-			ExpectedError:   nil,
+			Name:                "GetControlPlane should return Success for KubeAdm",
+			ExpectedSuccess:     &ControlPlane{Provider: "kubeadm"},
+			ExpectedClientError: nil,
 			Request: &test.K8sRequest{
 				ResourceKind: "KubeadmControlPlane",
 			},
@@ -49,10 +49,10 @@ func Test_GetControlPlane_ErrorKindNotFound(t *testing.T) {
 	testCase := test.TestCase{
 		Name:            "GetControlPlane should return Kind not found",
 		ExpectedSuccess: nil,
-		ExpectedError: &clientError.ClientError{
+		ExpectedClientError: &clientError.ClientError{
 			ErrorCause:           nil,
 			ErrorDetailedMessage: "The Kind NonExistentKind could not be found",
-			ErrorMessage:         "KIND_NOT_FOUND",
+			ErrorMessage:         clientError.KindNotFound,
 		},
 		Request: &test.K8sRequest{
 			ResourceKind: "NonExistentKind",
@@ -68,7 +68,7 @@ func Test_GetControlPlane_ErrorKindNotFound(t *testing.T) {
 
 	t.Run(testCase.Name, func(t *testing.T) {
 		_, err := k.GetControlPlane(request.ResourceKind)
-		assert.ErrorContains(t, err, testCase.ExpectedError.Error())
-		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedError))
+		assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
+		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 	})
 }
