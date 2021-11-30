@@ -1,29 +1,10 @@
 package test
 
-import (
-	"io"
-	"net/http"
-	"net/http/httptest"
-)
+import "github.com/topfreegames/kaas-management-api/util/clientError"
 
-// Case Default template structure for table driven test
-type Case struct {
-	ExpectedBody interface{}
-	ExpectedCode int
-	Request      *Request
-}
-
-// Request Represents an Mock of HTTP request
-type Request struct {
-	Method string
-	Body   io.Reader
-	Path   string
-}
-
-// Run executes the Cases
-func (r *Request) Run(handler http.Handler) *httptest.ResponseRecorder {
-	req, _ := http.NewRequest(r.Method, r.Path, r.Body)
-	w := httptest.NewRecorder()
-	handler.ServeHTTP(w, req)
-	return w
+type TestCase struct {
+	Name            string
+	ExpectedSuccess interface{}
+	ExpectedError   *clientError.ClientError
+	Request         interface{}
 }

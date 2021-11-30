@@ -16,7 +16,6 @@ type NodeGroup struct {
 	Cluster            string
 	Environment        string
 	Region             string
-	Infrastructure     *NodeInfrastructure
 	InfrastructureName string
 	InfrastructureKind string
 	Replicas           *int32
@@ -31,7 +30,7 @@ func (k Kubernetes) GetMachinePool(clusterName string, nodeGroupName string) (*c
 	machinePoolRaw, err := resource.Namespace(clusterName).Get(context.TODO(), nodeGroupName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested machinepool %s was not found for the cluster %s!", clusterName, clusterName))
+			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested machinepool %s was not found for the cluster %s!", nodeGroupName, clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
 			return nil, fmt.Errorf("Error getting machinepool: %v\n", statusError.ErrStatus.Message)
 		}
@@ -84,6 +83,10 @@ func (k Kubernetes) ListMachinePool(clusterName string) (*clusterapiexpv1beta1.M
 		return nil, fmt.Errorf("could not Unmarshal machinepool JSON into clusterAPI list: %v", err) // TODO
 	}
 
+	if len(machinePools.Items) == 0 {
+		return nil, clientError.NewClientError(err, clientError.EmptyResponse, fmt.Sprintf("no Machinepools were found for the cluster %s!", clusterName))
+	}
+
 	return &machinePools, nil
 }
 
@@ -96,7 +99,7 @@ func (k Kubernetes) GetMachineDeployment(clusterName string, nodeGroupName strin
 	machineDeploymentRaw, err := resource.Namespace(clusterName).Get(context.TODO(), nodeGroupName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested machinedeployment %s was not found in namespace %s!", clusterName, clusterName))
+			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested machinedeployment %s was not found for the cluster %s!", nodeGroupName, clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
 			return nil, fmt.Errorf("Error getting machinedeployment: %v\n", statusError.ErrStatus.Message)
 		}
@@ -129,7 +132,7 @@ func (k Kubernetes) ListMachineDeployment(clusterName string) (*clusterapiv1beta
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("No machineDeployment was not found for the cluster %s!", clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
 			//TODO
-			return nil, fmt.Errorf("Error getting machinedeplotment list: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting machinedeployment list: %v\n", statusError.ErrStatus.Message)
 		}
 		return nil, fmt.Errorf("Internal server clientError: %v\n", err)
 	}
@@ -143,6 +146,10 @@ func (k Kubernetes) ListMachineDeployment(clusterName string) (*clusterapiv1beta
 	err = json.Unmarshal(machineDeploymentsRawJson, &machineDeployments)
 	if err != nil {
 		return nil, fmt.Errorf("could not Unmarshal machinedeployment JSON into clusterAPI list: %v", err) // TODO
+	}
+
+	if len(machineDeployments.Items) == 0 {
+		return nil, clientError.NewClientError(err, clientError.EmptyResponse, fmt.Sprintf("no Machinedeployments were found for the cluster %s!", clusterName))
 	}
 
 	return &machineDeployments, nil
@@ -189,13 +196,13 @@ func (k Kubernetes) GetNodeGroup(clusterName string, nodeGroupName string) (*Nod
 	}
 
 	finalError := fmt.Errorf("NodePoolError: %v, %v", machinePoolErr, machineDeploymentErr)
-	return nil, clientError.NewClientError(finalError, clientError.ResourceNotFound, fmt.Sprintf("Could not find the NodeGroup: %v in the cluster %v", nodeGroupName, clusterName))
+	return nil, clientError.NewClientError(finalError, clientError.ResourceNotFound, fmt.Sprintf("Could not find the NodeGroup %v in the cluster %v", nodeGroupName, clusterName))
 }
 
 // GetNodeGroup checks which CRD the cluster is using for its node groups (eg machinepool or machinedeployment) and returns a list in the Nodegroup struct format
-func (k Kubernetes) ListNodeGroup(clusterName string) ([]*NodeGroup, error) {
+func (k Kubernetes) ListNodeGroup(clusterName string) ([]NodeGroup, error) {
 
-	var nodeGroups []*NodeGroup
+	var nodeGroups []NodeGroup
 
 	// Check if is machinePool
 	machinePools, machinePoolErr := k.ListMachinePool(clusterName)
@@ -205,9 +212,8 @@ func (k Kubernetes) ListNodeGroup(clusterName string) ([]*NodeGroup, error) {
 			return nil, machinePoolErr // Something wrong with the cluster //TODO
 		}
 	} else {
-
 		for _, machinePool := range machinePools.Items {
-			nodeGroup := &NodeGroup{
+			nodeGroup := NodeGroup{
 				Name:               machinePool.Name,
 				Cluster:            machinePool.Spec.ClusterName,
 				InfrastructureKind: machinePool.Spec.Template.Spec.InfrastructureRef.Kind,
@@ -227,7 +233,7 @@ func (k Kubernetes) ListNodeGroup(clusterName string) ([]*NodeGroup, error) {
 		}
 	} else {
 		for _, machineDeployment := range machineDeployments.Items {
-			nodeGroup := &NodeGroup{
+			nodeGroup := NodeGroup{
 				Name:               machineDeployment.Name,
 				Cluster:            machineDeployment.Spec.ClusterName,
 				InfrastructureKind: machineDeployment.Spec.Template.Spec.InfrastructureRef.Kind,
@@ -240,5 +246,5 @@ func (k Kubernetes) ListNodeGroup(clusterName string) ([]*NodeGroup, error) {
 	}
 
 	finalError := fmt.Errorf("NodePoolError: %v, %v", machinePoolErr, machineDeploymentErr)
-	return nil, clientError.NewClientError(finalError, clientError.ResourceNotFound, fmt.Sprintf("Could not list NodeGroups in the cluster %v", clusterName))
+	return nil, clientError.NewClientError(finalError, clientError.EmptyResponse, fmt.Sprintf("No NodeGroups were found in the cluster %v", clusterName))
 }

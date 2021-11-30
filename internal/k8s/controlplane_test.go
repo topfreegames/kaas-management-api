@@ -1,0 +1,74 @@
+package k8s
+
+import (
+	"github.com/topfreegames/kaas-management-api/test"
+	"github.com/topfreegames/kaas-management-api/util/clientError"
+	"gotest.tools/assert"
+	"reflect"
+	"testing"
+)
+
+func Test_GetControlPlane_Success(t *testing.T) {
+	testCases := []test.TestCase{
+		{
+			Name:            "GetControlPlane should return Success for kops",
+			ExpectedSuccess: &ControlPlane{Provider: "kops"},
+			ExpectedError:   nil,
+			Request: &test.K8sRequest{
+				ResourceKind: "KopsControlPlane",
+			},
+		},
+		{
+			Name:            "GetControlPlane should return Success for KubeAdm",
+			ExpectedSuccess: &ControlPlane{Provider: "kubeadm"},
+			ExpectedError:   nil,
+			Request: &test.K8sRequest{
+				ResourceKind: "KubeadmControlPlane",
+			},
+		},
+	}
+
+	fakeClient := test.NewK8sFakeDynamicClient()
+	k := &Kubernetes{K8sAuth: &Auth{
+		DynamicClient: fakeClient,
+	}}
+
+	for _, testCase := range testCases {
+		request := testCase.GetK8sRequest()
+		expectedInfra, _ := testCase.ExpectedSuccess.(*ControlPlane)
+
+		t.Run(testCase.Name, func(t *testing.T) {
+			response, err := k.GetControlPlane(request.ResourceKind)
+			assert.NilError(t, err)
+			assert.Assert(t, reflect.DeepEqual(expectedInfra, response))
+		})
+	}
+}
+
+func Test_GetControlPlane_ErrorKindNotFound(t *testing.T) {
+	testCase := test.TestCase{
+		Name:            "GetControlPlane should return Kind not found",
+		ExpectedSuccess: nil,
+		ExpectedError: &clientError.ClientError{
+			ErrorCause:           nil,
+			ErrorDetailedMessage: "The Kind NonExistentKind could not be found",
+			ErrorMessage:         "KIND_NOT_FOUND",
+		},
+		Request: &test.K8sRequest{
+			ResourceKind: "NonExistentKind",
+		},
+	}
+
+	request := testCase.GetK8sRequest()
+
+	fakeClient := test.NewK8sFakeDynamicClient()
+	k := &Kubernetes{K8sAuth: &Auth{
+		DynamicClient: fakeClient,
+	}}
+
+	t.Run(testCase.Name, func(t *testing.T) {
+		_, err := k.GetControlPlane(request.ResourceKind)
+		assert.ErrorContains(t, err, testCase.ExpectedError.Error())
+		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedError))
+	})
+}

@@ -66,5 +66,9 @@ func (k Kubernetes) ListClusters() (clusterapiv1beta1.ClusterList, error) {
 		return clusterapiv1beta1.ClusterList{}, fmt.Errorf("could not Unmarshal Clusters JSON into clusterAPI list: %v", err)
 	}
 
+	if len(clusters.Items) == 0 {
+		return clusterapiv1beta1.ClusterList{}, clientError.NewClientError(err, clientError.EmptyResponse, "no Clusters were found!")
+	}
+
 	return clusters, nil
 }

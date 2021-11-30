@@ -70,7 +70,6 @@ func (controller ControllerConfig) NodeGroupByClusterHandler(c *gin.Context) {
 		log.Printf("[NodeGroupByClusterHandler] %v", err)
 		return
 	}
-	nodeGroup.Infrastructure = infra
 
 	nodeGroupV1 := writeNodeGroupV1(cluster, nodeGroup, infra)
 	c.JSON(http.StatusOK, nodeGroupV1)
@@ -115,8 +114,7 @@ func (controller ControllerConfig) NodeGroupListByClusterHandler(c *gin.Context)
 		if err != nil {
 			log.Printf("[NodeGroupHandler] Error getting NodeInfrastructure for nodegroup %s: %s", nodeGroup.Name, err.Error())
 		} else {
-			nodeGroup.Infrastructure = infra
-			nodeGroupV1 := writeNodeGroupV1(cluster, nodeGroup, infra)
+			nodeGroupV1 := writeNodeGroupV1(cluster, &nodeGroup, infra)
 			nodegroupV1List.Items = append(nodegroupV1List.Items, nodeGroupV1)
 		}
 	}
@@ -136,7 +134,7 @@ func (controller ControllerConfig) NodeGroupListByClusterHandler(c *gin.Context)
 func writeNodeGroupV1(cluster clusterapiv1beta1.Cluster, nodeGroup *k8s.NodeGroup, nodeGroupInfrastructure *k8s.NodeInfrastructure) nodegroupv1.NodeGroup {
 
 	metadata := &nodegroupv1.Metadata{
-		Cluster:     cluster.Name,
+		Cluster:     nodeGroup.Cluster,
 		Replicas:    nodeGroup.Replicas,
 		MachineType: nodeGroupInfrastructure.MachineType,
 		Zones:       nodeGroupInfrastructure.Az,

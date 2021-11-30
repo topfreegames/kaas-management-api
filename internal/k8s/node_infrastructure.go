@@ -11,6 +11,8 @@ import (
 )
 
 type NodeInfrastructure struct {
+	Name        string
+	Cluster     string
 	Provider    string
 	Az          []string
 	MachineType string
@@ -28,7 +30,9 @@ func (k Kubernetes) GetNodeInfrastructure(clusterName, infrastructureKind string
 		// DockerMachine api is a test resource for cluster-api, it api code breaks often so there's no reason to really use it.
 		// TODO: Fork the official repo, fix the go.mod and implement to be used in our tests
 		infrastructure = &NodeInfrastructure{
+			Name:     "docker",
 			Provider: "docker",
+			Cluster:  "docker-cluster",
 			Az: []string{
 				"local",
 			},
@@ -43,10 +47,12 @@ func (k Kubernetes) GetNodeInfrastructure(clusterName, infrastructureKind string
 			if !ok {
 				return nil, fmt.Errorf("an error has ocurred while feching kopsmachinepool infrastructure: %v", err)
 			}
-			return nil, clientError.NewClientError(err, clientErr.ErrorMessage, fmt.Sprintf("Could not retrieve the infrastructure: %v", clientErr.ErrorDetailedMessage))
+			return nil, clientError.NewClientError(err, clientErr.ErrorMessage, "Could not retrieve the infrastructure")
 		}
 		infrastructure = &NodeInfrastructure{
+			Name:        kops.Name,
 			Provider:    "kops",
+			Cluster:     kops.ClusterName,
 			Az:          kops.Spec.KopsInstanceGroupSpec.Subnets,
 			MachineType: kops.Spec.KopsInstanceGroupSpec.MachineType,
 			Min:         kops.Spec.KopsInstanceGroupSpec.MinSize,
@@ -61,7 +67,7 @@ func (k Kubernetes) GetNodeInfrastructure(clusterName, infrastructureKind string
 	return nil, clientError.NewClientError(nil, clientError.KindNotFound, fmt.Sprintf("The Kind %s could not be found", infrastructureKind))
 }
 
-// GetMachineDeployment Returns a KopsMachinepool CR from a specific cluster
+// GetMachineDeployment Returns a KopsMachinepaool CR from a specific cluster
 func (k Kubernetes) GetKopsMachinePool(clusterName string, infrastructureName string) (*clusterapikopsv1alpha1.KopsMachinePool, error) {
 	client := k.K8sAuth.DynamicClient
 
@@ -84,7 +90,7 @@ func (k Kubernetes) GetKopsMachinePool(clusterName string, infrastructureName st
 
 	err = json.Unmarshal(kopsMachinePoolRawJson, &kopsMachinePool)
 	if err != nil {
-		return nil, clientError.NewClientError(err, clientError.InvalidResource, "could not Unmarshal kopsmachinepool JSON into clusterAPI list")
+		return nil, clientError.NewClientError(err, clientError.InvalidResource, "could not Unmarshal kopsmachinepool JSON into clusterAPI")
 	}
 
 	return &kopsMachinePool, nil
