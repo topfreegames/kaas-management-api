@@ -35,16 +35,16 @@ func Test_GetNodeInfrastructure_Success(t *testing.T) {
 			ResourceName: "kops-test",
 			ResourceKind: "KopsMachinePool",
 			Cluster:      "test-cluster",
-			TestResources: []runtime.Object{
-				test.NewTestKopsMachinePool("kops-test", "test-cluster"),
-			},
+		},
+		K8sTestResources: []runtime.Object{
+			test.NewTestKopsMachinePool("kops-test", "test-cluster"),
 		},
 	}
 
 	request := testCase.GetK8sRequest()
 	expectedInfra, _ := testCase.ExpectedSuccess.(*NodeInfrastructure)
 
-	fakeClient := test.NewK8sFakeDynamicClientWithResources(request.TestResources...)
+	fakeClient := test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 	k := &Kubernetes{K8sAuth: &Auth{
 		DynamicClient: fakeClient,
 	}}
@@ -69,15 +69,15 @@ func Test_GetNodeInfrastructure_ErrorResourceNotFound(t *testing.T) {
 			ResourceName: "NonExistentResource",
 			ResourceKind: "KopsMachinePool",
 			Cluster:      "test-cluster",
-			TestResources: []runtime.Object{
-				test.NewTestKopsMachinePool("OtherResource", "test-cluster"),
-			},
+		},
+		K8sTestResources: []runtime.Object{
+			test.NewTestKopsMachinePool("OtherResource", "test-cluster"),
 		},
 	}
 
 	request := testCase.GetK8sRequest()
 
-	fakeClient := test.NewK8sFakeDynamicClientWithResources(request.TestResources...)
+	fakeClient := test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 	k := &Kubernetes{K8sAuth: &Auth{
 		DynamicClient: fakeClient,
 	}}
@@ -102,15 +102,15 @@ func Test_GetNodeInfrastructure_ErrorResourceNotFoundForCluster(t *testing.T) {
 			ResourceName: "test-kops",
 			ResourceKind: "KopsMachinePool",
 			Cluster:      "nonExistentCluster",
-			TestResources: []runtime.Object{
-				test.NewTestKopsMachinePool("test-kops", "otherCluster"),
-			},
+		},
+		K8sTestResources: []runtime.Object{
+			test.NewTestKopsMachinePool("test-kops", "otherCluster"),
 		},
 	}
 
 	request := testCase.GetK8sRequest()
 
-	fakeClient := test.NewK8sFakeDynamicClientWithResources(request.TestResources...)
+	fakeClient := test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 	k := &Kubernetes{K8sAuth: &Auth{
 		DynamicClient: fakeClient,
 	}}
@@ -160,16 +160,16 @@ func Test_GetKopsMachinePool_Success(t *testing.T) {
 		Request: &test.K8sRequest{
 			ResourceName: "myMachinePool",
 			Cluster:      "mycluster",
-			TestResources: []runtime.Object{
-				test.NewTestKopsMachinePool("myMachinePool", "mycluster"),
-			},
+		},
+		K8sTestResources: []runtime.Object{
+			test.NewTestKopsMachinePool("myMachinePool", "mycluster"),
 		},
 	}
 
 	request := testCase.GetK8sRequest()
 	expectedInfra, _ := testCase.ExpectedSuccess.(*clusterapikopsv1alpha1.KopsMachinePool)
 
-	fakeClient := test.NewK8sFakeDynamicClientWithResources(request.TestResources...)
+	fakeClient := test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 	k := &Kubernetes{K8sAuth: &Auth{
 		DynamicClient: fakeClient,
 	}}
@@ -193,15 +193,15 @@ func Test_GetKopsMachinePool_ErrorResourceNotFound(t *testing.T) {
 		Request: &test.K8sRequest{
 			ResourceName: "NonExistentMachinePool",
 			Cluster:      "mycluster",
-			TestResources: []runtime.Object{
-				test.NewTestKopsMachinePool("OtherResource", "mycluster"),
-			},
+		},
+		K8sTestResources: []runtime.Object{
+			test.NewTestKopsMachinePool("OtherResource", "mycluster"),
 		},
 	}
 
 	request := testCase.GetK8sRequest()
 
-	fakeClient := test.NewK8sFakeDynamicClientWithResources(request.TestResources...)
+	fakeClient := test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 	k := &Kubernetes{K8sAuth: &Auth{
 		DynamicClient: fakeClient,
 	}}
@@ -225,15 +225,15 @@ func Test_GetKopsMachinePool_ErrorResourceNotFoundNonExistentCluster(t *testing.
 		Request: &test.K8sRequest{
 			ResourceName: "ExistentResource",
 			Cluster:      "NonExistentCluster",
-			TestResources: []runtime.Object{
-				test.NewTestKopsMachinePool("ExistentResource", "ExistentCluster"),
-			},
+		},
+		K8sTestResources: []runtime.Object{
+			test.NewTestKopsMachinePool("ExistentResource", "ExistentCluster"),
 		},
 	}
 
 	request := testCase.GetK8sRequest()
 
-	fakeClient := test.NewK8sFakeDynamicClientWithResources(request.TestResources...)
+	fakeClient := test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 	k := &Kubernetes{K8sAuth: &Auth{
 		DynamicClient: fakeClient,
 	}}

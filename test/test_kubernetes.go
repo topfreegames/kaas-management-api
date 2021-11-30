@@ -16,7 +16,6 @@ type K8sRequest struct {
 	ResourceName  string
 	ResourceKind  string
 	Cluster       string
-	TestResources []runtime.Object
 }
 
 // GetK8sRequest returns the request of the test as an instance of the struct *K8sRequest

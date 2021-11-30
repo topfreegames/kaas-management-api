@@ -11,6 +11,6 @@ type TestCase struct {
 	ExpectedSuccess     interface{}
 	ExpectedClientError *clientError.ClientError
 	ExpectedHTTPError   *errorResponse.ClientErrorResponse
-	TestK8sResources    []runtime.Object
+	K8sTestResources    []runtime.Object
 	Request             interface{}
 }

@@ -20,10 +20,10 @@ func Test_GetCluster_Success(t *testing.T) {
 			ExpectedClientError: nil,
 			Request: &test.K8sRequest{
 				ResourceName: "testcluster",
-				TestResources: []runtime.Object{
-					test.NewTestCluster("testcluster", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-					test.NewTestCluster("testcluster2", "testcluster-kops-cp2", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster2", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-				},
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestCluster("testcluster", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestCluster("testcluster2", "testcluster-kops-cp2", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster2", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
 			},
 		},
 	}
@@ -39,7 +39,7 @@ func Test_GetCluster_Success(t *testing.T) {
 		if !ok {
 			log.Fatalf("Failed converting Success struct from test \"%s\" to *v1beta1.MachinePool", testCase.Name)
 		}
-		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(request.TestResources...)
+		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 
 		t.Run(testCase.Name, func(t *testing.T) {
 			response, err := k.GetCluster(request.ResourceName)
@@ -61,9 +61,9 @@ func Test_GetCluster_ErrorNotFound(t *testing.T) {
 			},
 			Request: &test.K8sRequest{
 				ResourceName: "nonexistentcluster",
-				TestResources: []runtime.Object{
-					test.NewTestCluster("testcluster", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-				},
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestCluster("testcluster", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
 			},
 		},
 	}
@@ -75,7 +75,7 @@ func Test_GetCluster_ErrorNotFound(t *testing.T) {
 
 	for _, testCase := range testCases {
 		request := testCase.GetK8sRequest()
-		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(request.TestResources...)
+		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 
 		t.Run(testCase.Name, func(t *testing.T) {
 			_, err := k.GetCluster(request.ResourceName)
@@ -100,10 +100,9 @@ func Test_ListClusters_Success(t *testing.T) {
 				},
 			},
 			ExpectedClientError: nil,
-			Request: &test.K8sRequest{
-				TestResources: []runtime.Object{
-					test.NewTestCluster("testcluster1", "testcluster-kops-cp1", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster1", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-				},
+			Request: &test.K8sRequest{},
+			K8sTestResources: []runtime.Object{
+				test.NewTestCluster("testcluster1", "testcluster-kops-cp1", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster1", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
 			},
 		},
 		{
@@ -120,11 +119,10 @@ func Test_ListClusters_Success(t *testing.T) {
 				},
 			},
 			ExpectedClientError: nil,
-			Request: &test.K8sRequest{
-				TestResources: []runtime.Object{
-					test.NewTestCluster("testcluster2", "testcluster-kops-cp2", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster2", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-					test.NewTestCluster("testcluster3", "testcluster-kops-cp3", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster3", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-				},
+			Request: &test.K8sRequest{},
+			K8sTestResources: []runtime.Object{
+				test.NewTestCluster("testcluster2", "testcluster-kops-cp2", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster2", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestCluster("testcluster3", "testcluster-kops-cp3", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster3", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
 			},
 		},
 	}
@@ -135,12 +133,11 @@ func Test_ListClusters_Success(t *testing.T) {
 	}}
 
 	for _, testCase := range testCases {
-		request := testCase.GetK8sRequest()
 		expectedInfra, ok := testCase.ExpectedSuccess.(*clusterapiv1beta1.ClusterList)
 		if !ok {
 			log.Fatalf("Failed converting Success struct from test \"%s\" to *clusterapiexpv1beta1.MachinePoolList", testCase.Name)
 		}
-		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(request.TestResources...)
+		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 
 		t.Run(testCase.Name, func(t *testing.T) {
 			response, err := k.ListClusters()
