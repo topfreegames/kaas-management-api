@@ -16,7 +16,7 @@ spec:
     pods:
       cidrBlocks:
         - 192.168.0.0/16
-    serviceDomain: kops-cluster.example.com
+    serviceDomain: cluster.local
     services:
       cidrBlocks:
         - 10.10.0.0/12
@@ -28,6 +28,9 @@ spec:
     apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
     kind: KopsAWSCluster
     name: kops-cluster
+  controlPlaneEndpoint:
+    host: "kops-cluster.example.com"
+    port: 443
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
 kind: KopsControlPlane
