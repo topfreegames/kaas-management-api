@@ -1,6 +1,8 @@
 package test
 
 import (
+	"github.com/gin-gonic/gin"
+	"github.com/topfreegames/kaas-management-api/api"
 	"io"
 	"log"
 	"net/http"
@@ -27,6 +29,13 @@ func (t TestCase) GetHTTPRequest() *HTTPTestRequest {
 		log.Fatalf("Could not convert TestCase %s Request to HTTPTestRequest", t.Name)
 	}
 	return request
+}
+
+func SetupEndpointRouter(endpoint *api.ApiEndpoint) *api.ApiEndpoint {
+	endpoint.Router = nil
+	endpoint.RouterGroup = nil
+	endpoint.CreatePublicRouterGroup(gin.Default())
+	return endpoint
 }
 
 // RunHTTPTest executes the Cases

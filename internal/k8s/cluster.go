@@ -14,7 +14,7 @@ import (
 func (k Kubernetes) GetCluster(clusterName string) (*clusterapiv1beta1.Cluster, error) {
 	client := k.K8sAuth.DynamicClient
 
-	resource := client.Resource(clusterResourceSchemaV1beta1)
+	resource := client.Resource(ClusterResourceSchemaV1beta1)
 
 	clustersRaw, err := resource.Namespace(clusterName).Get(context.TODO(), clusterName, metav1.GetOptions{})
 	if err != nil {
@@ -44,7 +44,7 @@ func (k Kubernetes) GetCluster(clusterName string) (*clusterapiv1beta1.Cluster, 
 func (k Kubernetes) ListClusters() (*clusterapiv1beta1.ClusterList, error) {
 	client := k.K8sAuth.DynamicClient
 
-	clustersRaw, err := client.Resource(clusterResourceSchemaV1beta1).List(context.TODO(), metav1.ListOptions{})
+	clustersRaw, err := client.Resource(ClusterResourceSchemaV1beta1).List(context.TODO(), metav1.ListOptions{})
 
 	if errors.IsNotFound(err) {
 		return nil, clientError.NewClientError(err, clientError.ResourceNotFound, "Could not find any cluster in the Kubernetes API!")

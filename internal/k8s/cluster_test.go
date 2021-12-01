@@ -100,7 +100,7 @@ func Test_ListClusters_Success(t *testing.T) {
 				},
 			},
 			ExpectedClientError: nil,
-			Request: &test.K8sRequest{},
+			Request:             &test.K8sRequest{},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("testcluster1", "testcluster-kops-cp1", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster1", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
 			},
@@ -119,7 +119,7 @@ func Test_ListClusters_Success(t *testing.T) {
 				},
 			},
 			ExpectedClientError: nil,
-			Request: &test.K8sRequest{},
+			Request:             &test.K8sRequest{},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("testcluster2", "testcluster-kops-cp2", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster2", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
 				test.NewTestCluster("testcluster3", "testcluster-kops-cp3", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster3", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),

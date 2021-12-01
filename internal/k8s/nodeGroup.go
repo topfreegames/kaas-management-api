@@ -26,7 +26,7 @@ func (k Kubernetes) GetMachinePool(clusterName string, nodeGroupName string) (*c
 
 	client := k.K8sAuth.DynamicClient
 
-	resource := client.Resource(machinePoolSchemaV1beta1)
+	resource := client.Resource(MachinePoolSchemaV1beta1)
 	machinePoolRaw, err := resource.Namespace(clusterName).Get(context.TODO(), nodeGroupName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -61,7 +61,7 @@ func (k Kubernetes) ListMachinePool(clusterName string) (*clusterapiexpv1beta1.M
 
 	client := k.K8sAuth.DynamicClient
 
-	resource := client.Resource(machinePoolSchemaV1beta1)
+	resource := client.Resource(MachinePoolSchemaV1beta1)
 	machinePoolsRaw, err := resource.Namespace(clusterName).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -94,7 +94,7 @@ func (k Kubernetes) ListMachinePool(clusterName string) (*clusterapiexpv1beta1.M
 func (k Kubernetes) GetMachineDeployment(clusterName string, nodeGroupName string) (*clusterapiv1beta1.MachineDeployment, error) {
 	client := k.K8sAuth.DynamicClient
 
-	resource := client.Resource(machineDeploymentSchemaV1beta1)
+	resource := client.Resource(MachineDeploymentSchemaV1beta1)
 
 	machineDeploymentRaw, err := resource.Namespace(clusterName).Get(context.TODO(), nodeGroupName, metav1.GetOptions{})
 	if err != nil {
@@ -124,7 +124,7 @@ func (k Kubernetes) GetMachineDeployment(clusterName string, nodeGroupName strin
 func (k Kubernetes) ListMachineDeployment(clusterName string) (*clusterapiv1beta1.MachineDeploymentList, error) {
 	client := k.K8sAuth.DynamicClient
 
-	resource := client.Resource(machineDeploymentSchemaV1beta1)
+	resource := client.Resource(MachineDeploymentSchemaV1beta1)
 
 	machineDeploymentsRaw, err := resource.Namespace(clusterName).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {

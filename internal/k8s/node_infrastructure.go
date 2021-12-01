@@ -71,7 +71,7 @@ func (k Kubernetes) GetNodeInfrastructure(clusterName, infrastructureKind string
 func (k Kubernetes) GetKopsMachinePool(clusterName string, infrastructureName string) (*clusterapikopsv1alpha1.KopsMachinePool, error) {
 	client := k.K8sAuth.DynamicClient
 
-	resource := client.Resource(kopsMachinePoolSchemaV1alpha1)
+	resource := client.Resource(KopsMachinePoolSchemaV1alpha1)
 	kopsMachinePoolRaw, err := resource.Namespace(clusterName).Get(context.TODO(), infrastructureName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {

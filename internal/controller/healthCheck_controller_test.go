@@ -2,39 +2,48 @@ package controller
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	healthCheckv1 "github.com/topfreegames/kaas-management-api/api/healthCheck"
 	"github.com/topfreegames/kaas-management-api/test"
 )
 
 func TestHealthCheckHandler(t *testing.T) {
-	tests := map[string]test.Case{
-		"Success health check response": {
-			ExpectedCode: http.StatusOK,
+	testCase := test.TestCase{
+		Name: "Healthcheck should return ok",
+		ExpectedSuccess: test.HTTPTestExpectedResponse{
 			ExpectedBody: healthCheckv1.HealthCheck{
 				Healthy: true,
 			},
-			Request: &test.Request{
-				Method: "GET",
-				Body:   nil,
-				Path:   "/healthcheck",
-			},
+			ExpectedCode: http.StatusOK,
+		},
+		ExpectedHTTPError: nil,
+		Request: &test.HTTPTestRequest{
+			Method: http.MethodGet,
+			Body:   nil,
+			Path:   healthCheckv1.Endpoint.EndpointPath + "/",
 		},
 	}
 
-	router := gin.Default()
-	router.GET("/healthcheck", HealthCheckHandler)
-	for testMsg, testCase := range tests {
-		t.Run(testMsg, func(t *testing.T) {
-			w := testCase.Request.Run(router)
-			assert.Equal(t, testCase.ExpectedCode, w.Code)
-			expected, err := json.Marshal(testCase.ExpectedBody)
-			assert.Nil(t, err)
-			assert.Equal(t, string(expected), w.Body.String())
-		})
+	endpoint := test.SetupEndpointRouter(healthCheckv1.Endpoint)
+	endpoint.CreateRoute(http.MethodGet, "/", HealthCheckHandler)
+
+	request := testCase.GetHTTPRequest()
+	expectedResponse, ok := testCase.ExpectedSuccess.(test.HTTPTestExpectedResponse)
+	if !ok {
+		log.Fatalf("Failed converting Success struct from test \"%s\" to *test.HTTPTestExpectedResponse", testCase.Name)
 	}
+
+	t.Run(testCase.Name, func(t *testing.T) {
+
+		w := request.RunHTTPTest(endpoint.Router)
+
+		assert.Equal(t, expectedResponse.ExpectedCode, w.Code)
+		expected, err := json.Marshal(expectedResponse.ExpectedBody)
+		assert.Nil(t, err)
+		assert.Equal(t, string(expected), w.Body.String())
+	})
 }

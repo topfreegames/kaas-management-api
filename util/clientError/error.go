@@ -29,16 +29,19 @@ func NewClientError(errorCause error, errorMessage string, errorDetailedMessage 
 }
 
 func ErrorHandler(c *gin.Context, err error, errorMessage string, httpCode int) {
-	var error string
+	var errorMsg string
 
 	clientErr, ok := err.(*ClientError)
 	if ok {
-		error = clientErr.ErrorMessage
+		errorMsg = clientErr.ErrorMessage
+	} else {
+		errorMsg = UnexpectedError
 	}
 
 	clientErrorResponse := &apiError.ClientErrorResponse{
 		ErrorMessage: errorMessage,
-		ErrorType:    error,
+		ErrorType:    errorMsg,
+		HttpCode:     httpCode,
 	}
 	c.JSON(httpCode, clientErrorResponse)
 }

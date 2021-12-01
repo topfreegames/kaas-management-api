@@ -4,7 +4,7 @@ package v1
 type NodeGroup struct {
 	Name                   string    `json:"name"`
 	Metadata               *Metadata `json:"metadata"`
-	KubeProvider           string    `json:"kubeprovider"`
+	KubeProvider           string    `json:"kubeprovider,omitempty"`
 	InfrastructureProvider string    `json:"infrastructureprovider"`
 }
 

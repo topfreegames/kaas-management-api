@@ -61,7 +61,8 @@ func (controller ControllerConfig) NodeGroupByClusterHandler(c *gin.Context) {
 		} else {
 			log.Printf("Error getting NodeGroup: %s: %v", clienterr.ErrorDetailedMessage, clienterr.ErrorCause)
 			if clienterr.ErrorMessage == clientError.ResourceNotFound {
-				clientError.ErrorHandler(c, err, "Nodegroup infrastructure resource is invalid", http.StatusInternalServerError)
+				newErr := clientError.NewClientError(clienterr, clientError.InvalidResource, clienterr.ErrorDetailedMessage)
+				clientError.ErrorHandler(c, newErr, "Nodegroup resource is invalid", http.StatusInternalServerError)
 			}
 			if clienterr.ErrorMessage == clientError.InvalidResource {
 				clientError.ErrorHandler(c, err, fmt.Sprintf("Nodegroup infrastructure resource is invalid: %v", clienterr.ErrorCause.Error()), http.StatusInternalServerError)
@@ -131,7 +132,7 @@ func (controller ControllerConfig) NodeGroupListByClusterHandler(c *gin.Context)
 
 // TODO better function name
 // writeNodeGroupV1 Write the response of the nodeGroup version 1 endpoint
-func writeNodeGroupV1(cluster clusterapiv1beta1.Cluster, nodeGroup *k8s.NodeGroup, nodeGroupInfrastructure *k8s.NodeInfrastructure) nodegroupv1.NodeGroup {
+func writeNodeGroupV1(cluster *clusterapiv1beta1.Cluster, nodeGroup *k8s.NodeGroup, nodeGroupInfrastructure *k8s.NodeInfrastructure) nodegroupv1.NodeGroup {
 
 	metadata := &nodegroupv1.Metadata{
 		Cluster:     nodeGroup.Cluster,
@@ -147,7 +148,6 @@ func writeNodeGroupV1(cluster clusterapiv1beta1.Cluster, nodeGroup *k8s.NodeGrou
 	nodeGroupV1 := nodegroupv1.NodeGroup{
 		Name:                   nodeGroup.Name,
 		Metadata:               metadata,
-		KubeProvider:           "",
 		InfrastructureProvider: nodeGroupInfrastructure.Provider,
 	}
 

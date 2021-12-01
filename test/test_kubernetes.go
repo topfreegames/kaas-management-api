@@ -13,9 +13,9 @@ import (
 )
 
 type K8sRequest struct {
-	ResourceName  string
-	ResourceKind  string
-	Cluster       string
+	ResourceName string
+	ResourceKind string
+	Cluster      string
 }
 
 // GetK8sRequest returns the request of the test as an instance of the struct *K8sRequest
@@ -31,6 +31,17 @@ func NewK8sFakeDynamicClient() *fake.FakeDynamicClient {
 	client := fake.NewSimpleDynamicClient(runtime.NewScheme())
 	return client
 }
+
+//func NewK8sFakeDynamicClientWithSchema(schema schema.GroupVersionResource) *fake.FakeDynamicClient {
+//	scheme := runtime.NewScheme()
+//	scheme.AddKnownTypes()
+//	client := fake.NewSimpleDynamicClient()
+//	gvk := gvr.GroupVersion().WithKind(testKind)
+//
+//	client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[])
+//	client.Resource(schema)
+//	return client
+//}
 
 func NewK8sFakeDynamicClientWithResources(resources ...runtime.Object) *fake.FakeDynamicClient {
 
