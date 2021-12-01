@@ -3,7 +3,7 @@ package test
 import (
 	clusterapikopsv1alpha1 "github.com/topfreegames/kubernetes-kops-operator/apis/infrastructure/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/kops/pkg/apis/kops/v1alpha2"
@@ -32,17 +32,6 @@ func NewK8sFakeDynamicClient() *fake.FakeDynamicClient {
 	return client
 }
 
-//func NewK8sFakeDynamicClientWithSchema(schema schema.GroupVersionResource) *fake.FakeDynamicClient {
-//	scheme := runtime.NewScheme()
-//	scheme.AddKnownTypes()
-//	client := fake.NewSimpleDynamicClient()
-//	gvk := gvr.GroupVersion().WithKind(testKind)
-//
-//	client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[])
-//	client.Resource(schema)
-//	return client
-//}
-
 func NewK8sFakeDynamicClientWithResources(resources ...runtime.Object) *fake.FakeDynamicClient {
 
 	client := fake.NewSimpleDynamicClient(runtime.NewScheme(), resources...)
@@ -52,11 +41,11 @@ func NewK8sFakeDynamicClientWithResources(resources ...runtime.Object) *fake.Fak
 
 func NewTestCluster(name string, controlPlaneName string, controPlaneKind string, controlPlaneApiVersion string, infrastructureName string, infrastructureKind string, infrastructureApiVersion string) *clusterapiv1beta1.Cluster {
 	testResource := clusterapiv1beta1.Cluster{
-		TypeMeta: v1.TypeMeta{
+		TypeMeta: metav1.TypeMeta{
 			Kind:       "Cluster",
 			APIVersion: "cluster.x-k8s.io/v1beta1",
 		},
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: name,
 			Labels: map[string]string{
@@ -99,11 +88,11 @@ func NewTestCluster(name string, controlPlaneName string, controPlaneKind string
 
 func NewTestKopsMachinePool(name string, clusterName string) *clusterapikopsv1alpha1.KopsMachinePool {
 	testResource := clusterapikopsv1alpha1.KopsMachinePool{
-		TypeMeta: v1.TypeMeta{
+		TypeMeta: metav1.TypeMeta{
 			Kind:       "KopsMachinePool",
 			APIVersion: "infrastructure.cluster.x-k8s.io/v1alpha1",
 		},
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   clusterName,
 			ClusterName: clusterName,
@@ -124,11 +113,11 @@ func NewTestKopsMachinePool(name string, clusterName string) *clusterapikopsv1al
 func NewTestMachinePool(name string, clusterName string, infrastructureKind string, infrastructureName string, infrastructureApiVersion string) *clusterapiexpv1beta1.MachinePool {
 
 	testResource := clusterapiexpv1beta1.MachinePool{
-		TypeMeta: v1.TypeMeta{
+		TypeMeta: metav1.TypeMeta{
 			Kind:       "MachinePool",
 			APIVersion: "cluster.x-k8s.io/v1beta1",
 		},
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   clusterName,
 			ClusterName: clusterName,
@@ -159,11 +148,11 @@ func NewTestMachinePool(name string, clusterName string, infrastructureKind stri
 func NewTestMachineDeployment(name string, clusterName string, infrastructureKind string, infrastructureName string, infrastructureApiVersion string) *clusterapiv1beta1.MachineDeployment {
 
 	testResource := clusterapiv1beta1.MachineDeployment{
-		TypeMeta: v1.TypeMeta{
+		TypeMeta: metav1.TypeMeta{
 			Kind:       "MachineDeployment",
 			APIVersion: "cluster.x-k8s.io/v1beta1",
 		},
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Namespace:   clusterName,
 			ClusterName: clusterName,

@@ -223,43 +223,48 @@ func Test_ClusterListHandler_Success(t *testing.T) {
 	}
 }
 
-//func Test_ClusterListHandler_ErrorEmptyResponse(t *testing.T) {
-//	testCases := []test.TestCase{
-//		{
-//			Name: "Error getting cluster list in clusterV1 endpoint should return not-found",
-//			ExpectedSuccess: nil,
-//			ExpectedHTTPError: &apiError.ClientErrorResponse{
-//				ErrorMessage: "Cluster not found",
-//				ErrorType:    clientError.ResourceNotFound,
-//				HttpCode: http.StatusNotFound,
-//			},
-//			Request: &test.HTTPTestRequest{
-//				Method: http.MethodGet,
-//				Body:   nil,
-//				Path:   clusterv1.Endpoint.EndpointPath + "/",
-//			},
-//		},
-//	}
-//
-//	k := &k8s.Kubernetes{
-//		K8sAuth: &k8s.Auth{
-//			DynamicClient: test.NewK8sFakeDynamicClientWithSchema(k8s.ClusterResourceSchemaV1beta1),
-//		},
-//	}
-//
-//	controller := ConfigureControllers(k)
-//	endpoint := test.SetupEndpointRouter(clusterv1.Endpoint)
-//	endpoint.CreateRoute(http.MethodGet, "/", controller.ClusterListHandler)
-//
-//	for _, testCase := range testCases {
-//		request := testCase.GetHTTPRequest()
-//
-//		t.Run(testCase.Name, func(t *testing.T) {
-//			w := request.RunHTTPTest(endpoint.Router)
-//			assert.Equal(t, testCase.ExpectedHTTPError.HttpCode, w.Code)
-//			expected, err := json.Marshal(testCase.ExpectedHTTPError)
-//			assert.Nil(t, err)
-//			assert.Equal(t, string(expected), w.Body.String())
-//		})
-//	}
-//}
+func Test_ClusterListHandler_ErrorEmptyResponse(t *testing.T) {
+	testCases := []test.TestCase{
+		{
+			Name:            "Error getting cluster list in clusterV1 endpoint should return empty response for invalid cluster in list",
+			ExpectedSuccess: nil,
+			ExpectedHTTPError: &apiError.ClientErrorResponse{
+				ErrorMessage: "No Clusters were found",
+				ErrorType:    clientError.EmptyResponse,
+				HttpCode:     http.StatusNotFound,
+			},
+			Request: &test.HTTPTestRequest{
+				Method: http.MethodGet,
+				Body:   nil,
+				Path:   clusterv1.Endpoint.EndpointPath + "/",
+			},
+			K8sTestResources: []runtime.Object{
+				// Invalid cluster without controPlane and infrastructure
+				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "", "controlplane.cluster.x-k8s.io/v1alpha1", "", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
+			},
+		},
+	}
+
+	k := &k8s.Kubernetes{
+		K8sAuth: &k8s.Auth{
+			DynamicClient: test.NewK8sFakeDynamicClient(),
+		},
+	}
+
+	controller := ConfigureControllers(k)
+	endpoint := test.SetupEndpointRouter(clusterv1.Endpoint)
+	endpoint.CreateRoute(http.MethodGet, "/", controller.ClusterListHandler)
+
+	for _, testCase := range testCases {
+		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
+		request := testCase.GetHTTPRequest()
+
+		t.Run(testCase.Name, func(t *testing.T) {
+			w := request.RunHTTPTest(endpoint.Router)
+			assert.Equal(t, testCase.ExpectedHTTPError.HttpCode, w.Code)
+			expected, err := json.Marshal(testCase.ExpectedHTTPError)
+			assert.Nil(t, err)
+			assert.Equal(t, string(expected), w.Body.String())
+		})
+	}
+}
