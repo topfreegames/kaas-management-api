@@ -26,8 +26,6 @@ func (k Kubernetes) GetClusterInfrastructure(infrastructureKind string) (*Cluste
 			Provider: "kops",
 		}
 		return infrastructure, nil
-	default:
-		return nil, clientError.NewClientError(nil, clientError.KindNotFound, fmt.Sprintf("The Kind %s could not be found", infrastructureKind))
 	}
 
 	return nil, clientError.NewClientError(nil, clientError.KindNotFound, fmt.Sprintf("The Kind %s could not be found", infrastructureKind))

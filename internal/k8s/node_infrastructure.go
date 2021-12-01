@@ -27,7 +27,7 @@ func (k Kubernetes) GetNodeInfrastructure(clusterName, infrastructureKind string
 
 	switch infrastructureKind {
 	case "DockerMachineTemplate":
-		// DockerMachine api is a test resource for cluster-api, it api code breaks often so there's no reason to really use it.
+		// DockerMachine api is a test resource for cluster-api, it api code breaks often so there's no reason to really use it other than development.
 		// TODO: Fork the official repo, fix the go.mod and implement to be used in our tests
 		infrastructure = &NodeInfrastructure{
 			Name:     "docker",
@@ -39,6 +39,7 @@ func (k Kubernetes) GetNodeInfrastructure(clusterName, infrastructureKind string
 			MachineType: "container",
 			Spec:        nil,
 		}
+		return infrastructure, nil
 
 	case "KopsMachinePool":
 		kops, err := k.GetKopsMachinePool(clusterName, infrastructureName)
@@ -60,8 +61,6 @@ func (k Kubernetes) GetNodeInfrastructure(clusterName, infrastructureKind string
 			Spec:        kops.Spec,
 		}
 		return infrastructure, nil
-	default:
-		return nil, clientError.NewClientError(nil, clientError.KindNotFound, fmt.Sprintf("The Kind %s could not be found", infrastructureKind))
 	}
 
 	return nil, clientError.NewClientError(nil, clientError.KindNotFound, fmt.Sprintf("The Kind %s could not be found", infrastructureKind))

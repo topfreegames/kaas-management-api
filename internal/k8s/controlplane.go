@@ -26,8 +26,6 @@ func (k Kubernetes) GetControlPlane(controlPlaneKind string) (*ControlPlane, err
 			Provider: "kops",
 		}
 		return controlPlane, nil
-	default:
-		return nil, clientError.NewClientError(nil, clientError.KindNotFound, fmt.Sprintf("The Kind %s could not be found", controlPlaneKind))
 	}
 
 	return nil, clientError.NewClientError(nil, clientError.KindNotFound, fmt.Sprintf("The Kind %s could not be found", controlPlaneKind))
