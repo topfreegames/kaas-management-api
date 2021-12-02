@@ -35,12 +35,15 @@ func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
 	controlPlane, err := controller.K8sInstance.GetControlPlane(clusterApiCR.Spec.ControlPlaneRef.Kind)
 	if err != nil {
 		log.Printf("Error getting cluster controlplane for cluster %s: %v", clusterApiCR.Name, err.Error())
-		clientError.ErrorHandler(c, err, "Could not get cluster control plane resource", http.StatusInternalServerError)
+		newErr := clientError.NewClientError(err, clientError.InvalidConfiguration, fmt.Sprintf("Could not get Control Plane for cluster %s", clusterApiCR.Name))
+		clientError.ErrorHandler(c, newErr, "Cluster configuration is invalid", http.StatusInternalServerError)
+		return
 	}
 	infrastructure, err := controller.K8sInstance.GetClusterInfrastructure(clusterApiCR.Spec.InfrastructureRef.Kind)
 	if err != nil {
-		log.Printf("Error getting cluster infrastructure for %s: %v", clusterApiCR.Name, err.Error())
-		clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
+		log.Printf("Error getting cluster infrastructure for cluster %s: %v", clusterApiCR.Name, err.Error())
+		newErr := clientError.NewClientError(err, clientError.InvalidConfiguration, fmt.Sprintf("Could not get infrastructure for cluster %s", clusterApiCR.Name))
+		clientError.ErrorHandler(c, newErr, "Cluster configuration is invalid", http.StatusInternalServerError)
 		return
 	}
 
@@ -71,14 +74,12 @@ func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 		controlPlane, err := controller.K8sInstance.GetControlPlane(clusterApiCR.Spec.ControlPlaneRef.Kind)
 		if err != nil {
 			log.Printf("Error getting cluster controlplane for cluster %s: %v", clusterApiCR.Name, err.Error())
-			//clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
 			continue
 		}
 
 		infrastructure, err := controller.K8sInstance.GetClusterInfrastructure(clusterApiCR.Spec.InfrastructureRef.Kind)
 		if err != nil {
 			log.Printf("Error getting cluster infrastructure for %s: %v", clusterApiCR.Name, err.Error())
-			//clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
 			continue
 		}
 		cluster := writeClusterV1(&clusterApiCR, controlPlane, infrastructure)

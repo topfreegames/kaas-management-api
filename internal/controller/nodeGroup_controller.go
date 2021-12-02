@@ -24,10 +24,12 @@ func (controller ControllerConfig) NodeGroupByClusterHandler(c *gin.Context) {
 		if !ok {
 			log.Printf("Error getting clusterAPI CR: %v", err)
 			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
+			return
 		} else {
 			log.Printf("Error getting clusterAPI CR: %s: %v", clienterr.ErrorDetailedMessage, clienterr.ErrorCause)
 			if clienterr.ErrorMessage == clientError.ResourceNotFound {
 				clientError.ErrorHandler(c, err, "Cluster not found", http.StatusNotFound)
+				return
 			}
 		}
 		log.Printf("[NodeGroupByClusterHandler] %v", err)
@@ -46,7 +48,7 @@ func (controller ControllerConfig) NodeGroupByClusterHandler(c *gin.Context) {
 				clientError.ErrorHandler(c, err, "Nodegroup not found", http.StatusNotFound)
 			}
 			if clienterr.ErrorMessage == clientError.InvalidResource {
-				clientError.ErrorHandler(c, err, fmt.Sprintf("Nodegroup is invalid: %v", clienterr.ErrorCause.Error()), http.StatusInternalServerError)
+				clientError.ErrorHandler(c, err, fmt.Sprintf("Nodegroup resource is invalid: %v", clienterr.ErrorCause.Error()), http.StatusInternalServerError)
 			}
 		}
 		log.Printf("[NodeGroupByClusterHandler] %v", err)
@@ -58,14 +60,22 @@ func (controller ControllerConfig) NodeGroupByClusterHandler(c *gin.Context) {
 		if !ok {
 			log.Printf("Error getting NodeInfrastructure: %v", err)
 			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
+			return
 		} else {
 			log.Printf("Error getting NodeGroup: %s: %v", clienterr.ErrorDetailedMessage, clienterr.ErrorCause)
 			if clienterr.ErrorMessage == clientError.ResourceNotFound {
-				newErr := clientError.NewClientError(clienterr, clientError.InvalidResource, clienterr.ErrorDetailedMessage)
-				clientError.ErrorHandler(c, newErr, "Nodegroup resource is invalid", http.StatusInternalServerError)
+				newErr := clientError.NewClientError(clienterr, clientError.InvalidConfiguration, clienterr.ErrorDetailedMessage)
+				clientError.ErrorHandler(c, newErr, "Nodegroup configuration is invalid", http.StatusInternalServerError)
+				return
+			}
+			if clienterr.ErrorMessage == clientError.KindNotFound {
+				newErr := clientError.NewClientError(clienterr, clientError.InvalidConfiguration, clienterr.ErrorDetailedMessage)
+				clientError.ErrorHandler(c, newErr, "Nodegroup configuration is invalid", http.StatusInternalServerError)
+				return
 			}
 			if clienterr.ErrorMessage == clientError.InvalidResource {
-				clientError.ErrorHandler(c, err, fmt.Sprintf("Nodegroup infrastructure resource is invalid: %v", clienterr.ErrorCause.Error()), http.StatusInternalServerError)
+				clientError.ErrorHandler(c, err, fmt.Sprintf("Nodegroup configuration is invalid: %v", clienterr.ErrorCause.Error()), http.StatusInternalServerError)
+				return
 			}
 		}
 		log.Printf("[NodeGroupByClusterHandler] %v", err)

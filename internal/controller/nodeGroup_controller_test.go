@@ -118,8 +118,8 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			Name:            "Error getting nodeGroup without infrastructure in clusterV1 endpoint should return invalid resource",
 			ExpectedSuccess: nil,
 			ExpectedHTTPError: &apiError.ClientErrorResponse{
-				ErrorMessage: "Nodegroup resource is invalid",
-				ErrorType:    clientError.InvalidResource,
+				ErrorMessage: "Nodegroup configuration is invalid",
+				ErrorType:    clientError.InvalidConfiguration,
 				HttpCode:     http.StatusInternalServerError,
 			},
 			Request: &test.HTTPTestRequest{
@@ -130,6 +130,24 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
 				test.NewTestMachinePool("nodes", "test-cluster.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+			},
+		},
+		{
+			Name:            "Error getting nodeGroup with invalid infrastructure kind in clusterV1 endpoint should return invalid resource",
+			ExpectedSuccess: nil,
+			ExpectedHTTPError: &apiError.ClientErrorResponse{
+				ErrorMessage: "Nodegroup configuration is invalid",
+				ErrorType:    clientError.InvalidConfiguration,
+				HttpCode:     http.StatusInternalServerError,
+			},
+			Request: &test.HTTPTestRequest{
+				Method: http.MethodGet,
+				Body:   nil,
+				Path:   clusterv1.Endpoint.EndpointPath + "/test-cluster.cluster.example.com/nodegroups/nodes",
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachinePool("nodes", "test-cluster.cluster.example.com", "invalidKind", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 			},
 		},
 	}

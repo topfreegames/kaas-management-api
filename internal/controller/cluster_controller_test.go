@@ -75,7 +75,7 @@ func Test_ClusterHandler_Success(t *testing.T) {
 	}
 }
 
-func Test_ClusterHandler_ErrorNotFound(t *testing.T) {
+func Test_ClusterHandler_Error(t *testing.T) {
 	testCases := []test.TestCase{
 		{
 			Name:            "Error getting test-cluster in clusterV1 endpoint should return not found",
@@ -90,6 +90,41 @@ func Test_ClusterHandler_ErrorNotFound(t *testing.T) {
 				Body:   nil,
 				Path:   clusterv1.Endpoint.EndpointPath + "/test-cluster.cluster.example.com",
 			},
+			K8sTestResources: []runtime.Object{},
+		},
+		{
+			Name:            "Error getting test-cluster in clusterV1 endpoint should return invalid for non-existent infrastructure kind",
+			ExpectedSuccess: nil,
+			ExpectedHTTPError: &apiError.ClientErrorResponse{
+				ErrorMessage: "Cluster configuration is invalid",
+				ErrorType:    clientError.InvalidConfiguration,
+				HttpCode:     http.StatusInternalServerError,
+			},
+			Request: &test.HTTPTestRequest{
+				Method: http.MethodGet,
+				Body:   nil,
+				Path:   clusterv1.Endpoint.EndpointPath + "/test-cluster.cluster.example.com",
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "", "controlplane.cluster.x-k8s.io/v1alpha1"),
+			},
+		},
+		{
+			Name:            "Error getting test-cluster in clusterV1 endpoint should return invalid for non-existent controlplane kind",
+			ExpectedSuccess: nil,
+			ExpectedHTTPError: &apiError.ClientErrorResponse{
+				ErrorMessage: "Cluster configuration is invalid",
+				ErrorType:    clientError.InvalidConfiguration,
+				HttpCode:     http.StatusInternalServerError,
+			},
+			Request: &test.HTTPTestRequest{
+				Method: http.MethodGet,
+				Body:   nil,
+				Path:   clusterv1.Endpoint.EndpointPath + "/test-cluster.cluster.example.com",
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "non-existent", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "kops-cluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
+			},
 		},
 	}
 
@@ -103,7 +138,7 @@ func Test_ClusterHandler_ErrorNotFound(t *testing.T) {
 	endpoint.CreateRoute(http.MethodGet, fmt.Sprintf(":%s", clusterv1.ClusterNameParameter), controller.ClusterHandler)
 
 	for _, testCase := range testCases {
-
+		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 		request := testCase.GetHTTPRequest()
 
 		t.Run(testCase.Name, func(t *testing.T) {
