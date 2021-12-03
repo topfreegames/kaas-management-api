@@ -19,31 +19,50 @@ func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
 
 	clusterApiCR, err := controller.K8sInstance.GetCluster(clusterName)
 	if err != nil {
-		log.Printf("Error getting clusterAPI CR: %v", err)
+		log.Printf("[ClusterHandler] Error getting clusterAPI CR: %s", err.Error())
 		clientErr, ok := err.(*clientError.ClientError)
 		if !ok {
 			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
 		} else {
 			if clientErr.ErrorMessage == clientError.ResourceNotFound {
 				clientError.ErrorHandler(c, err, "Cluster not found", http.StatusNotFound)
+			} else {
+				clientError.ErrorHandler(c, err, "Unhandled Error", http.StatusInternalServerError)
 			}
 		}
-		log.Printf("[ClusterHandler] %v", err)
 		return
 	}
 
 	controlPlane, err := controller.K8sInstance.GetControlPlane(clusterApiCR.Spec.ControlPlaneRef.Kind)
 	if err != nil {
-		log.Printf("Error getting cluster controlplane for cluster %s: %v", clusterApiCR.Name, err.Error())
-		newErr := clientError.NewClientError(err, clientError.InvalidConfiguration, fmt.Sprintf("Could not get Control Plane for cluster %s", clusterApiCR.Name))
-		clientError.ErrorHandler(c, newErr, "Cluster configuration is invalid", http.StatusInternalServerError)
+		log.Printf("[ClusterHandler] Error getting cluster controlplane for cluster %s: %s", clusterApiCR.Name, err.Error())
+		clientErr, ok := err.(*clientError.ClientError)
+		if !ok {
+			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
+		} else {
+			if clientErr.ErrorMessage == clientError.KindNotFound {
+				newErr := clientError.NewClientError(err, clientError.InvalidConfiguration, clientErr.ErrorDetailedMessage)
+				clientError.ErrorHandler(c, newErr, "Cluster configuration is invalid", http.StatusInternalServerError)
+			} else {
+				clientError.ErrorHandler(c, err, "Unhandled Error", http.StatusInternalServerError)
+			}
+		}
 		return
 	}
 	infrastructure, err := controller.K8sInstance.GetClusterInfrastructure(clusterApiCR.Spec.InfrastructureRef.Kind)
 	if err != nil {
-		log.Printf("Error getting cluster infrastructure for cluster %s: %v", clusterApiCR.Name, err.Error())
-		newErr := clientError.NewClientError(err, clientError.InvalidConfiguration, fmt.Sprintf("Could not get infrastructure for cluster %s", clusterApiCR.Name))
-		clientError.ErrorHandler(c, newErr, "Cluster configuration is invalid", http.StatusInternalServerError)
+		log.Printf("Error getting cluster infrastructure for cluster %s: %s", clusterApiCR.Name, err.Error())
+		clientErr, ok := err.(*clientError.ClientError)
+		if !ok {
+			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
+		} else {
+			if clientErr.ErrorMessage == clientError.KindNotFound {
+				newErr := clientError.NewClientError(err, clientError.InvalidConfiguration, clientErr.ErrorDetailedMessage)
+				clientError.ErrorHandler(c, newErr, "Cluster configuration is invalid", http.StatusInternalServerError)
+			} else {
+				clientError.ErrorHandler(c, err, "Unhandled Error", http.StatusInternalServerError)
+			}
+		}
 		return
 	}
 
@@ -57,17 +76,18 @@ func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 
 	clusterApiListCR, err := controller.K8sInstance.ListClusters()
 	if err != nil {
-		log.Printf("Error getting clusterAPI CR: %v", err)
+		log.Printf("[ClusterListHandler] Error getting clusterAPI CR: %s", err.Error())
 		clientErr, ok := err.(*clientError.ClientError)
 		if !ok {
-			log.Printf("[ClusterListHandler] %v", err)
 			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
-			return
 		} else {
 			if clientErr.ErrorMessage == clientError.ResourceNotFound {
 				clientError.ErrorHandler(c, err, "Cluster not found", http.StatusNotFound)
+			} else {
+				clientError.ErrorHandler(c, err, "Unhandled Error", http.StatusInternalServerError)
 			}
 		}
+		return
 	}
 
 	for _, clusterApiCR := range clusterApiListCR.Items {

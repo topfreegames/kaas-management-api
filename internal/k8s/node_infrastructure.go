@@ -76,9 +76,9 @@ func (k Kubernetes) GetKopsMachinePool(clusterName string, infrastructureName st
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested KopsMachinePool %s was not found in namespace %s!", infrastructureName, clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting kopsmachinepool: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting kopsmachinepool from Kubernetes API: %v\n", statusError.ErrStatus.Message)
 		}
-		return nil, fmt.Errorf("Internal server clientError: %v\n", err)
+		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
 
 	var kopsMachinePool clusterapikopsv1alpha1.KopsMachinePool

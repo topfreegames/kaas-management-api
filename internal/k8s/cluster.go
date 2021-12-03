@@ -21,9 +21,9 @@ func (k Kubernetes) GetCluster(clusterName string) (*clusterapiv1beta1.Cluster, 
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested cluster %s was not found in namespace %s!", clusterName, clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting Cluster: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting Cluster from Kubernetes API: %v\n", statusError.ErrStatus.Message)
 		}
-		return nil, fmt.Errorf("Internal server clientError: %v\n", err)
+		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
 
 	var cluster clusterapiv1beta1.Cluster
@@ -47,11 +47,11 @@ func (k Kubernetes) ListClusters() (*clusterapiv1beta1.ClusterList, error) {
 	clustersRaw, err := client.Resource(ClusterResourceSchemaV1beta1).List(context.TODO(), metav1.ListOptions{})
 
 	if errors.IsNotFound(err) {
-		return nil, clientError.NewClientError(err, clientError.ResourceNotFound, "Could not find any cluster in the Kubernetes API!")
+		return nil, clientError.NewClientError(err, clientError.ResourceNotFound, "Could not find any cluster in the Kubernetes API")
 	} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-		return nil, fmt.Errorf("Error getting Cluster %v\n", statusError.ErrStatus.Message)
+		return nil, fmt.Errorf("Error getting Cluster from Server API %v\n", statusError.ErrStatus.Message)
 	} else if err != nil {
-		return nil, fmt.Errorf("Internal server clientError\n")
+		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
 
 	var clusters clusterapiv1beta1.ClusterList
@@ -67,7 +67,7 @@ func (k Kubernetes) ListClusters() (*clusterapiv1beta1.ClusterList, error) {
 	}
 
 	if len(clusters.Items) == 0 {
-		return nil, clientError.NewClientError(err, clientError.EmptyResponse, "no Clusters were found!")
+		return nil, clientError.NewClientError(err, clientError.EmptyResponse, "no Clusters were found")
 	}
 
 	return &clusters, nil

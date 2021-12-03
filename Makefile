@@ -19,6 +19,7 @@ lint:
 	golangci-lint run
 
 fix:
+	@echo " > Running go fmt"
 	go fmt ./...
 
 # Development environment targets

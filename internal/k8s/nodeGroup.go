@@ -32,9 +32,9 @@ func (k Kubernetes) GetMachinePool(clusterName string, nodeGroupName string) (*c
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested machinepool %s was not found for the cluster %s!", nodeGroupName, clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting machinepool: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting machinepool from Kubernetes API: %v\n", statusError.ErrStatus.Message)
 		}
-		return nil, fmt.Errorf("Internal server clientError: %v\n", err)
+		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
 
 	var machinePool clusterapiexpv1beta1.MachinePool
@@ -47,11 +47,6 @@ func (k Kubernetes) GetMachinePool(clusterName string, nodeGroupName string) (*c
 	if err != nil {
 		return nil, fmt.Errorf("could not Unmarshal machinepool JSON into clusterAPI list: %v", err)
 	}
-
-	//err := sanitizeMachinePool(&machinePool)
-	//if err != nil {
-	//	return nil, clientError.NewClientError(err, clientError.InvalidResource, fmt.Sprintf("The requested machinepool have a invalid spec: %v", err))
-	//}
 
 	return &machinePool, nil
 }
@@ -67,9 +62,9 @@ func (k Kubernetes) ListMachinePool(clusterName string) (*clusterapiexpv1beta1.M
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("no Machinepools were found for the cluster %s!", clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting machinepool list: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting machinepool list from Kubernetes API: %v\n", statusError.ErrStatus.Message)
 		}
-		return nil, fmt.Errorf("Internal server clientError: %v\n", err)
+		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
 
 	var machinePools clusterapiexpv1beta1.MachinePoolList
@@ -101,9 +96,9 @@ func (k Kubernetes) GetMachineDeployment(clusterName string, nodeGroupName strin
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested machinedeployment %s was not found for the cluster %s!", nodeGroupName, clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting machinedeployment: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting machinedeployment from Kubernetes API: %v\n", statusError.ErrStatus.Message)
 		}
-		return nil, fmt.Errorf("Internal server clientError: %v\n", err)
+		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
 
 	var machineDeployment clusterapiv1beta1.MachineDeployment
@@ -132,9 +127,9 @@ func (k Kubernetes) ListMachineDeployment(clusterName string) (*clusterapiv1beta
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("No machineDeployment was not found for the cluster %s!", clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
 			//TODO
-			return nil, fmt.Errorf("Error getting machinedeployment list: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting machinedeployment list from Kubernetes API: %v\n", statusError.ErrStatus.Message)
 		}
-		return nil, fmt.Errorf("Internal server clientError: %v\n", err)
+		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
 
 	var machineDeployments clusterapiv1beta1.MachineDeploymentList
