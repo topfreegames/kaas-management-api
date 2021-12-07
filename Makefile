@@ -1,4 +1,4 @@
-.PHONY: all dep build
+.PHONY: all dep build test lint fix
 
 all: dep build
 
@@ -10,28 +10,44 @@ build:
 	@echo "  >  build"
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build/manager
 
-initial-setup: init-kind init-cluster-api
+test:
+	@echo "> Running tests"
+	go test ./...
 
-deploy: init-kind init-tilt
+lint:
+	@echo " > Running golangci-lint"
+	golangci-lint run
 
-init-kind:
+fix:
+	@echo " > Running go fmt"
+	go fmt ./...
+
+# Development environment targets
+setup-dev-env: create-kind init-tilt
+
+create-kind:
 	bash ./scripts/kind.sh kaas-cluster
-
-init-dependencies:
-	kubectl apply -f ./scripts/assets/crds/dependencies
-
-wait-dependencies-resources:
-	bash ./scripts/wait-controllers.sh dependencies
-
-init-cluster-api:
-	kubectl apply -f ./scripts/assets/crds/cluster-api
-
-wait-cluster-api-resources:
-	bash ./scripts/wait-controllers.sh cluster-api
-
-create-clusters:
-	kubectl apply -f ./scripts/assets/crs
 
 init-tilt:
 	kind export kubeconfig --name kaas-cluster
 	tilt up
+
+tilt-ci:
+	kind export kubeconfig --name kaas-cluster
+	tilt ci
+
+# Tilt targets
+apply-capi-dependencies:
+	kubectl apply -f ./scripts/assets/crds/dependencies
+
+wait-capi-dependencies-resources:
+	bash ./scripts/wait-controllers.sh dependencies
+
+apply-capi:
+	kubectl apply -f ./scripts/assets/crds/cluster-api
+
+wait-capi-resources:
+	bash ./scripts/wait-controllers.sh cluster-api
+
+apply-test-clusters:
+	kubectl apply -f ./scripts/assets/crs

@@ -12,10 +12,25 @@ metadata:
   name: kops-cluster
   namespace: kops-cluster
 spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - 192.168.0.0/16
+    serviceDomain: cluster.local
+    services:
+      cidrBlocks:
+        - 10.10.0.0/12
   controlPlaneRef:
     apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
     kind: KopsControlPlane
     name: kops-cluster-control-plane
+  infrastructureRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
+    kind: KopsAWSCluster
+    name: kops-cluster
+  controlPlaneEndpoint:
+    host: "kops-cluster.example.com"
+    port: 443
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
 kind: KopsControlPlane
@@ -72,3 +87,10 @@ spec:
         type: Public
       masters: public
       nodes: public
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: KopsAWSCluster
+metadata:
+  name: kops-cluster
+spec:
+  foo: "bar"

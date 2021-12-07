@@ -1,36 +1,36 @@
 load('ext://restart_process', 'docker_build_with_restart')
 
-local_resource('Install dependencies',
-               'make init-dependencies'
+local_resource('Install CAPI dependencies',
+               'make apply-capi-dependencies'
 )
 
-local_resource('Wait dependencies resources',
-               'make wait-dependencies-resources',
+local_resource('Wait CAPI dependencies resources',
+               'make wait-capi-dependencies-resources',
                resource_deps=[
-                 'Install dependencies'
+                 'Install CAPI dependencies'
                ]
 )
 
 local_resource('Install Cluster API',
-               'make init-cluster-api'
+               'make apply-capi'
 )
 
-local_resource('Wait Cluster API resources',
-               'make wait-cluster-api-resources',
+local_resource('Wait CAPI resources',
+               'make wait-capi-resources',
                resource_deps=[
                  'Install Cluster API'
                ]
 )
 
-local_resource('Populate Cluster',
-               'make create-clusters',
+local_resource('Populate test clusters into CAPI',
+               'make apply-test-clusters',
                deps=['Makefile'],
                resource_deps=[
-                 'Wait Cluster API resources'
+                 'Wait CAPI resources'
                ]
 )
 
-local_resource('Build binary',
+local_resource('Build KaaS-manager binary',
                'make all',
                deps=['Makefile'],
 )

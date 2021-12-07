@@ -1,29 +1,16 @@
 package test
 
 import (
-	"io"
-	"net/http"
-	"net/http/httptest"
+	errorResponse "github.com/topfreegames/kaas-management-api/api/error"
+	"github.com/topfreegames/kaas-management-api/util/clientError"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// Case Default template structure for table driven test
-type Case struct {
-	ExpectedBody interface{}
-	ExpectedCode int
-	Request      *Request
-}
-
-// Request Represents an Mock of HTTP request
-type Request struct {
-	Method string
-	Body   io.Reader
-	Path   string
-}
-
-// Run executes the Cases
-func (r *Request) Run(handler http.Handler) *httptest.ResponseRecorder {
-	req, _ := http.NewRequest(r.Method, r.Path, r.Body)
-	w := httptest.NewRecorder()
-	handler.ServeHTTP(w, req)
-	return w
+type TestCase struct {
+	Name                string
+	ExpectedSuccess     interface{}
+	ExpectedClientError *clientError.ClientError
+	ExpectedHTTPError   *errorResponse.ClientErrorResponse
+	K8sTestResources    []runtime.Object
+	Request             interface{}
 }
