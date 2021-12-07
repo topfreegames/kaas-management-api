@@ -70,7 +70,7 @@ func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, cluster)
 }
 
-// ClusterListHandler - returns a list of clusters with the information
+// ClusterListHandler - returns a list of clusters with their information
 func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 	var clusterList v1.ClusterList
 
