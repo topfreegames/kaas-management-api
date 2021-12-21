@@ -66,12 +66,14 @@ func (k Kubernetes) GetNodeInfrastructure(clusterName, infrastructureKind string
 	return nil, clientError.NewClientError(nil, clientError.KindNotFound, fmt.Sprintf("The Kind %s could not be found", infrastructureKind))
 }
 
-// GetMachineDeployment Returns a KopsMachinepaool CR from a specific cluster
+// GetMachineDeployment Returns a KopsMachinePool CR from a specific cluster
 func (k Kubernetes) GetKopsMachinePool(clusterName string, infrastructureName string) (*clusterapikopsv1alpha1.KopsMachinePool, error) {
 	client := k.K8sAuth.DynamicClient
 
 	resource := client.Resource(KopsMachinePoolSchemaV1alpha1)
-	kopsMachinePoolRaw, err := resource.Namespace(clusterName).Get(context.TODO(), infrastructureName, metav1.GetOptions{})
+
+	namespace := GetClusterNamespace(clusterName)
+	kopsMachinePoolRaw, err := resource.Namespace(namespace).Get(context.TODO(), infrastructureName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested KopsMachinePool %s was not found in namespace %s!", infrastructureName, clusterName))

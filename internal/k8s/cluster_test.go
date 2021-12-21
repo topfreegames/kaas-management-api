@@ -56,7 +56,7 @@ func Test_GetCluster_ErrorNotFound(t *testing.T) {
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "The requested cluster nonexistentcluster was not found in namespace nonexistentcluster!",
+				ErrorDetailedMessage: "The requested cluster nonexistentcluster was not found in namespace kubernetes-nonexistentcluster!",
 				ErrorMessage:         clientError.ResourceNotFound,
 			},
 			Request: &test.K8sRequest{

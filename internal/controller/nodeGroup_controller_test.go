@@ -46,8 +46,8 @@ func Test_NodeGroupByClusterHandler_Success(t *testing.T) {
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachinePool("nodes", "test-cluster.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestKopsMachinePool("TestKopsMachinePool", "test-cluster.cluster.example.com"),
+				test.NewTestMachinePool("test-cluster.cluster.example.com-nodes", "test-cluster.cluster.example.com", "KopsMachinePool", "test-cluster.cluster.example.com-TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestKopsMachinePool("test-cluster.cluster.example.com-TestKopsMachinePool", "test-cluster.cluster.example.com"),
 			},
 		},
 	}
@@ -129,7 +129,7 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachinePool("nodes", "test-cluster.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachinePool("test-cluster.cluster.example.com-nodes", "test-cluster.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 			},
 		},
 		{
@@ -147,7 +147,7 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachinePool("nodes", "test-cluster.cluster.example.com", "invalidKind", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachinePool("test-cluster.cluster.example.com-nodes", "test-cluster.cluster.example.com", "invalidKind", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 			},
 		},
 	}
@@ -208,8 +208,8 @@ func Test_NodeGroupListByClusterHandler_Success(t *testing.T) {
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachinePool("nodes", "test-cluster.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestKopsMachinePool("TestKopsMachinePool", "test-cluster.cluster.example.com"),
+				test.NewTestMachinePool("test-cluster.cluster.example.com-nodes", "test-cluster.cluster.example.com", "KopsMachinePool", "test-cluster.cluster.example.com-TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestKopsMachinePool("test-cluster.cluster.example.com-TestKopsMachinePool", "test-cluster.cluster.example.com"),
 			},
 		},
 		{
@@ -257,9 +257,9 @@ func Test_NodeGroupListByClusterHandler_Success(t *testing.T) {
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster2.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachinePool("nodes2", "test-cluster2.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachinePool("nodes3", "test-cluster2.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestKopsMachinePool("TestKopsMachinePool", "test-cluster2.cluster.example.com"),
+				test.NewTestMachinePool("test-cluster2.cluster.example.com-nodes2", "test-cluster2.cluster.example.com", "KopsMachinePool", "test-cluster2.cluster.example.com-TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachinePool("test-cluster2.cluster.example.com-nodes3", "test-cluster2.cluster.example.com", "KopsMachinePool", "test-cluster2.cluster.example.com-TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestKopsMachinePool("test-cluster2.cluster.example.com-TestKopsMachinePool", "test-cluster2.cluster.example.com"),
 			},
 		},
 	}
@@ -309,9 +309,9 @@ func Test_NodeGroupListByClusterHandler_ErrorEmptyResponse(t *testing.T) {
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster2.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachinePool("nodes2", "test-cluster2.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachineDeployment("nodes3", "test-cluster2.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestKopsMachinePool("TestKopsMachinePool", "test-cluster2.cluster.example.com"),
+				test.NewTestMachinePool("test-cluster2.cluster.example.com-nodes2", "test-cluster2.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("test-cluster2.cluster.example.com-nodes3", "test-cluster2.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestKopsMachinePool("test-cluster2.cluster.example.com-TestKopsMachinePool", "test-cluster2.cluster.example.com"),
 			},
 		},
 		{
@@ -330,9 +330,9 @@ func Test_NodeGroupListByClusterHandler_ErrorEmptyResponse(t *testing.T) {
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster3.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
 				test.NewTestCluster("test-cluster2.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachinePool("nodes2", "test-cluster2.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachineDeployment("nodes3", "test-cluster2.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestKopsMachinePool("TestKopsMachinePool", "test-cluster2.cluster.example.com"),
+				test.NewTestMachinePool("test-cluster2.cluster.example.com-nodes2", "test-cluster2.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("test-cluster2.cluster.example.com-nodes3", "test-cluster2.cluster.example.com", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestKopsMachinePool("test-cluster2.cluster.example.com-TestKopsMachinePool", "test-cluster2.cluster.example.com"),
 			},
 		},
 	}

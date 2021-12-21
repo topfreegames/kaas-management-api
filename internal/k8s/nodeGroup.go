@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	clusterapiexpv1beta1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
+	"strings"
 )
 
 type NodeGroup struct {
@@ -21,13 +22,23 @@ type NodeGroup struct {
 	Replicas           *int32
 }
 
+func GetNodeGroupFullName(clusterName string, nodeGroupName string) string {
+	return fmt.Sprintf("%s-%s", clusterName, nodeGroupName)
+}
+
+func GetNodeGroupShortName(clusterName string, nodeGroupFullName string) string {
+	return strings.ReplaceAll(nodeGroupFullName, fmt.Sprintf("%s-", clusterName), "")
+}
+
 // GetMachinePool Returns a Machinepool CR from a specific cluster
 func (k Kubernetes) GetMachinePool(clusterName string, nodeGroupName string) (*clusterapiexpv1beta1.MachinePool, error) {
 
 	client := k.K8sAuth.DynamicClient
 
 	resource := client.Resource(MachinePoolSchemaV1beta1)
-	machinePoolRaw, err := resource.Namespace(clusterName).Get(context.TODO(), nodeGroupName, metav1.GetOptions{})
+	namespace := GetClusterNamespace(clusterName)
+	nodeGroupFullName := GetNodeGroupFullName(clusterName, nodeGroupName)
+	machinePoolRaw, err := resource.Namespace(namespace).Get(context.TODO(), nodeGroupFullName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested machinepool %s was not found for the cluster %s!", nodeGroupName, clusterName))
@@ -57,7 +68,8 @@ func (k Kubernetes) ListMachinePool(clusterName string) (*clusterapiexpv1beta1.M
 	client := k.K8sAuth.DynamicClient
 
 	resource := client.Resource(MachinePoolSchemaV1beta1)
-	machinePoolsRaw, err := resource.Namespace(clusterName).List(context.TODO(), metav1.ListOptions{})
+	namespace := GetClusterNamespace(clusterName)
+	machinePoolsRaw, err := resource.Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("no Machinepools were found for the cluster %s!", clusterName))
@@ -90,8 +102,9 @@ func (k Kubernetes) GetMachineDeployment(clusterName string, nodeGroupName strin
 	client := k.K8sAuth.DynamicClient
 
 	resource := client.Resource(MachineDeploymentSchemaV1beta1)
-
-	machineDeploymentRaw, err := resource.Namespace(clusterName).Get(context.TODO(), nodeGroupName, metav1.GetOptions{})
+	namespace := GetClusterNamespace(clusterName)
+	nodeGroupFullName := GetNodeGroupFullName(clusterName, nodeGroupName)
+	machineDeploymentRaw, err := resource.Namespace(namespace).Get(context.TODO(), nodeGroupFullName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested machinedeployment %s was not found for the cluster %s!", nodeGroupName, clusterName))
@@ -120,8 +133,8 @@ func (k Kubernetes) ListMachineDeployment(clusterName string) (*clusterapiv1beta
 	client := k.K8sAuth.DynamicClient
 
 	resource := client.Resource(MachineDeploymentSchemaV1beta1)
-
-	machineDeploymentsRaw, err := resource.Namespace(clusterName).List(context.TODO(), metav1.ListOptions{})
+	namespace := GetClusterNamespace(clusterName)
+	machineDeploymentsRaw, err := resource.Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("No machineDeployment was not found for the cluster %s!", clusterName))
@@ -164,7 +177,7 @@ func (k Kubernetes) GetNodeGroup(clusterName string, nodeGroupName string) (*Nod
 		}
 	} else {
 		nodeGroup = &NodeGroup{
-			Name:               machinePool.Name,
+			Name:               GetNodeGroupShortName(machinePool.Spec.ClusterName, machinePool.Name),
 			Cluster:            machinePool.Spec.ClusterName,
 			InfrastructureKind: machinePool.Spec.Template.Spec.InfrastructureRef.Kind,
 			InfrastructureName: machinePool.Spec.Template.Spec.InfrastructureRef.Name,
@@ -181,7 +194,7 @@ func (k Kubernetes) GetNodeGroup(clusterName string, nodeGroupName string) (*Nod
 		}
 	} else {
 		nodeGroup = &NodeGroup{
-			Name:               machineDeployment.Name,
+			Name:               GetNodeGroupShortName(machineDeployment.Spec.ClusterName, machineDeployment.Name),
 			Cluster:            machineDeployment.Spec.ClusterName,
 			InfrastructureKind: machineDeployment.Spec.Template.Spec.InfrastructureRef.Kind,
 			InfrastructureName: machineDeployment.Spec.Template.Spec.InfrastructureRef.Name,
@@ -209,7 +222,7 @@ func (k Kubernetes) ListNodeGroup(clusterName string) ([]NodeGroup, error) {
 	} else {
 		for _, machinePool := range machinePools.Items {
 			nodeGroup := NodeGroup{
-				Name:               machinePool.Name,
+				Name:               GetNodeGroupShortName(machinePool.Spec.ClusterName, machinePool.Name),
 				Cluster:            machinePool.Spec.ClusterName,
 				InfrastructureKind: machinePool.Spec.Template.Spec.InfrastructureRef.Kind,
 				InfrastructureName: machinePool.Spec.Template.Spec.InfrastructureRef.Name,
@@ -229,7 +242,7 @@ func (k Kubernetes) ListNodeGroup(clusterName string) ([]NodeGroup, error) {
 	} else {
 		for _, machineDeployment := range machineDeployments.Items {
 			nodeGroup := NodeGroup{
-				Name:               machineDeployment.Name,
+				Name:               GetNodeGroupShortName(machineDeployment.Spec.ClusterName, machineDeployment.Name),
 				Cluster:            machineDeployment.Spec.ClusterName,
 				InfrastructureKind: machineDeployment.Spec.Template.Spec.InfrastructureRef.Kind,
 				InfrastructureName: machineDeployment.Spec.Template.Spec.InfrastructureRef.Name,

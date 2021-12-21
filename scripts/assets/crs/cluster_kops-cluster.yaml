@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: kops-cluster
+  name: kubernetes-kops-cluster-example-com
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
@@ -9,25 +9,25 @@ metadata:
   labels:
     clusterGroup: test
     region: us-east-1
-  name: kops-cluster
-  namespace: kops-cluster
+  name: kops-cluster.example.com
+  namespace: kubernetes-kops-cluster-example-com
 spec:
   clusterNetwork:
     pods:
       cidrBlocks:
         - 192.168.0.0/16
-    serviceDomain: cluster.local
+    serviceDomain: kops-cluster.local
     services:
       cidrBlocks:
         - 10.10.0.0/12
   controlPlaneRef:
     apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
     kind: KopsControlPlane
-    name: kops-cluster-control-plane
+    name: kops-cluster.example.com-control-plane
   infrastructureRef:
-    apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
     kind: KopsAWSCluster
-    name: kops-cluster
+    name: kops-cluster.example.com-cluster
   controlPlaneEndpoint:
     host: "kops-cluster.example.com"
     port: 443
@@ -35,8 +35,8 @@ spec:
 apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
 kind: KopsControlPlane
 metadata:
-  name: kops-cluster-control-plane
-  namespace: kops-cluster
+  name: kops-cluster.example.com-control-plane
+  namespace: kubernetes-kops-cluster-example-com
 spec:
   kopsClusterSpec:
     useHostCertificates: true
@@ -91,6 +91,7 @@ spec:
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: KopsAWSCluster
 metadata:
-  name: kops-cluster
+  name: kops-cluster.example.com-cluster
+  namespace: kubernetes-kops-cluster-example-com
 spec:
   foo: "bar"

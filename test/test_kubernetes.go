@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	clusterapikopsv1alpha1 "github.com/topfreegames/kubernetes-kops-operator/apis/infrastructure/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -10,6 +11,7 @@ import (
 	"log"
 	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	clusterapiexpv1beta1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
+	"strings"
 )
 
 type K8sRequest struct {
@@ -39,7 +41,15 @@ func NewK8sFakeDynamicClientWithResources(resources ...runtime.Object) *fake.Fak
 	return client
 }
 
+func GetTestClusterNamespace(clusterName string) string {
+	prefix := "kubernetes"
+	clusterNamespace := strings.ReplaceAll(clusterName, ".", "-")
+	namespace := fmt.Sprintf("%s-%s", prefix, clusterNamespace)
+	return namespace
+}
+
 func NewTestCluster(name string, controlPlaneName string, controPlaneKind string, controlPlaneApiVersion string, infrastructureName string, infrastructureKind string, infrastructureApiVersion string) *clusterapiv1beta1.Cluster {
+	namespace := GetTestClusterNamespace(name)
 	testResource := clusterapiv1beta1.Cluster{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Cluster",
@@ -47,7 +57,7 @@ func NewTestCluster(name string, controlPlaneName string, controPlaneKind string
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: name,
+			Namespace: namespace,
 			Labels: map[string]string{
 				"region":       "us-east-1",
 				"environment":  "test",
@@ -87,6 +97,7 @@ func NewTestCluster(name string, controlPlaneName string, controPlaneKind string
 }
 
 func NewTestKopsMachinePool(name string, clusterName string) *clusterapikopsv1alpha1.KopsMachinePool {
+	namespace := GetTestClusterNamespace(clusterName)
 	testResource := clusterapikopsv1alpha1.KopsMachinePool{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "KopsMachinePool",
@@ -94,7 +105,7 @@ func NewTestKopsMachinePool(name string, clusterName string) *clusterapikopsv1al
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   clusterName,
+			Namespace:   namespace,
 			ClusterName: clusterName,
 		},
 		Spec: clusterapikopsv1alpha1.KopsMachinePoolSpec{
@@ -111,7 +122,7 @@ func NewTestKopsMachinePool(name string, clusterName string) *clusterapikopsv1al
 }
 
 func NewTestMachinePool(name string, clusterName string, infrastructureKind string, infrastructureName string, infrastructureApiVersion string) *clusterapiexpv1beta1.MachinePool {
-
+	namespace := GetTestClusterNamespace(clusterName)
 	testResource := clusterapiexpv1beta1.MachinePool{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "MachinePool",
@@ -119,7 +130,7 @@ func NewTestMachinePool(name string, clusterName string, infrastructureKind stri
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   clusterName,
+			Namespace:   namespace,
 			ClusterName: clusterName,
 		},
 		Spec: clusterapiexpv1beta1.MachinePoolSpec{
@@ -146,7 +157,7 @@ func NewTestMachinePool(name string, clusterName string, infrastructureKind stri
 }
 
 func NewTestMachineDeployment(name string, clusterName string, infrastructureKind string, infrastructureName string, infrastructureApiVersion string) *clusterapiv1beta1.MachineDeployment {
-
+	namespace := GetTestClusterNamespace(clusterName)
 	testResource := clusterapiv1beta1.MachineDeployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "MachineDeployment",
@@ -154,7 +165,7 @@ func NewTestMachineDeployment(name string, clusterName string, infrastructureKin
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
-			Namespace:   clusterName,
+			Namespace:   namespace,
 			ClusterName: clusterName,
 		},
 		Spec: clusterapiv1beta1.MachineDeploymentSpec{
