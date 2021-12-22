@@ -8,7 +8,16 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	"strings"
 )
+
+func GetClusterNamespace(clusterName string) string {
+
+	prefix := "kubernetes"
+	clusterNamespace := strings.ReplaceAll(clusterName, ".", "-")
+	namespace := fmt.Sprintf("%s-%s", prefix, clusterNamespace)
+	return namespace
+}
 
 // GetCluster gets a cluster-API cluster CR by name from the Kubernetes API. We follow the standard of one cluster per namespace.
 func (k Kubernetes) GetCluster(clusterName string) (*clusterapiv1beta1.Cluster, error) {
@@ -16,10 +25,11 @@ func (k Kubernetes) GetCluster(clusterName string) (*clusterapiv1beta1.Cluster, 
 
 	resource := client.Resource(ClusterResourceSchemaV1beta1)
 
-	clustersRaw, err := resource.Namespace(clusterName).Get(context.TODO(), clusterName, metav1.GetOptions{})
+	namespace := GetClusterNamespace(clusterName)
+	clustersRaw, err := resource.Namespace(namespace).Get(context.TODO(), clusterName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested cluster %s was not found in namespace %s!", clusterName, clusterName))
+			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested cluster %s was not found in namespace %s!", clusterName, namespace))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
 			return nil, fmt.Errorf("Error getting Cluster from Kubernetes API: %v\n", statusError.ErrStatus.Message)
 		}

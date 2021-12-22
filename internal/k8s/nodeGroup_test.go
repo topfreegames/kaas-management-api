@@ -30,8 +30,8 @@ func Test_GetNodeGroup_Success(t *testing.T) {
 				Cluster:      "TestCluster1",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("TestCluster2-TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
 			},
 		},
 		{
@@ -49,8 +49,8 @@ func Test_GetNodeGroup_Success(t *testing.T) {
 				Cluster:      "TestCluster2",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("TestCluster2-TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
 			},
 		},
 	}
@@ -270,15 +270,15 @@ func Test_GetMachinePool_Success(t *testing.T) {
 	testCases := []test.TestCase{
 		{
 			Name:                "GetMachinePool should return Success for MachinePool",
-			ExpectedSuccess:     test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+			ExpectedSuccess:     test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 			ExpectedClientError: nil,
 			Request: &test.K8sRequest{
 				ResourceName: "TestMachinePool",
 				Cluster:      "TestCluster1",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachinePool("TestMachinePool2", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachinePool("TestCluster1-TestMachinePool2", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 			},
 		},
 	}
@@ -481,15 +481,15 @@ func Test_GetMachineDeployment_Success(t *testing.T) {
 	testCases := []test.TestCase{
 		{
 			Name:                "GetMachineDeployment should return Success for MachineDeployment",
-			ExpectedSuccess:     test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+			ExpectedSuccess:     test.NewTestMachineDeployment("TestCluster1-TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
 			ExpectedClientError: nil,
 			Request: &test.K8sRequest{
 				ResourceName: "TestMachineDeployment",
 				Cluster:      "TestCluster1",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-				test.NewTestMachineDeployment("TestMachineDeployment2", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+				test.NewTestMachineDeployment("TestCluster1-TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+				test.NewTestMachineDeployment("TestCluster1-TestMachineDeployment2", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
 			},
 		},
 	}

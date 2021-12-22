@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: docker-cluster
+  name: kubernetes-docker-cluster-example-com
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
-  name: docker-cluster
-  namespace: docker-cluster
+  name: docker-cluster.example.com
+  namespace: kubernetes-docker-cluster-example-com
 spec:
   clusterNetwork:
     pods:
@@ -18,30 +18,30 @@ spec:
       cidrBlocks:
       - 10.128.0.0/12
   controlPlaneEndpoint:
-    host: "docker-cluster.example.com"
+    host: "docker-cluster.example.com.example.com"
     port: 443
   controlPlaneRef:
     apiVersion: controlplane.cluster.x-k8s.io/v1beta1
     kind: KubeadmControlPlane
-    name: docker-cluster-control-plane
-    namespace: docker-cluster
+    name: docker-cluster.example.com-control-plane
+    namespace: kubernetes-docker-cluster-example-com
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: DockerCluster
-    name: docker-cluster
-    namespace: docker-cluster
+    name: docker-cluster.example.com
+    namespace: kubernetes-docker-cluster-example-com
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: DockerCluster
 metadata:
-  name: docker-cluster
-  namespace: docker-cluster
+  name: docker-cluster.example.com
+  namespace: kubernetes-docker-cluster-example-com
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: DockerMachineTemplate
 metadata:
-  name: docker-cluster-control-plane
-  namespace: docker-cluster
+  name: docker-cluster.example.com-control-plane
+  namespace: kubernetes-docker-cluster-example-com
 spec:
   template:
     spec:
@@ -52,8 +52,8 @@ spec:
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: KubeadmControlPlane
 metadata:
-  name: docker-cluster-control-plane
-  namespace: docker-cluster
+  name: docker-cluster.example.com-control-plane
+  namespace: kubernetes-docker-cluster-example-com
 spec:
   kubeadmConfigSpec:
     clusterConfiguration:
@@ -80,16 +80,16 @@ spec:
     infrastructureRef:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       kind: DockerMachineTemplate
-      name: docker-cluster-control-plane
-      namespace: docker-cluster
+      name: docker-cluster.example.com-control-plane
+      namespace: kubernetes-docker-cluster-example-com
   replicas: 3
   version: v1.22.0
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: DockerMachineTemplate
 metadata:
-  name: docker-cluster-md-0
-  namespace: docker-cluster
+  name: docker-cluster.example.com-md-0
+  namespace: kubernetes-docker-cluster-example-com
 spec:
   template:
     spec: {}
@@ -97,8 +97,8 @@ spec:
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: KubeadmConfigTemplate
 metadata:
-  name: docker-cluster-md-0
-  namespace: docker-cluster
+  name: docker-cluster.example.com-md-0
+  namespace: kubernetes-docker-cluster-example-com
 spec:
   template:
     spec:
@@ -111,10 +111,10 @@ spec:
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
-  name: docker-cluster-md-0
-  namespace: docker-cluster
+  name: docker-cluster.example.com-md-0
+  namespace: kubernetes-docker-cluster-example-com
 spec:
-  clusterName: docker-cluster
+  clusterName: docker-cluster.example.com
   replicas: 3
   selector:
     matchLabels: null
@@ -124,12 +124,12 @@ spec:
         configRef:
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
           kind: KubeadmConfigTemplate
-          name: docker-cluster-md-0
-          namespace: docker-cluster
-      clusterName: docker-cluster
+          name: docker-cluster.example.com-md-0
+          namespace: kubernetes-docker-cluster-example-com
+      clusterName: docker-cluster.example.com
       infrastructureRef:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: DockerMachineTemplate
-        name: docker-cluster-md-0
-        namespace: docker-cluster
+        name: docker-cluster.example.com-md-0
+        namespace: kubernetes-docker-cluster-example-com
       version: v1.22.0
