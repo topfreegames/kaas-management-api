@@ -20,16 +20,11 @@ jobs:
       with:
         go-version: 1.16
 
-    - name: Install dependencies
-      run: sudo apt update && sudo apt install make -y
-
-    - name: Install Go Modules
-      run: make dep
-
     - name: Run lint
       uses: golangci/golangci-lint-action@v2.5.2
       with:
         version: latest
+        args: --timeout 3m0s
 
   tests:
     runs-on: ubuntu-latest
