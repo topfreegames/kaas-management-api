@@ -18,14 +18,19 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17
-    
+        go-version: 1.16
+
+    - name: Install dependencies
+      run: sudo apt update && sudo apt install make -y
+
+    - name: Install Go Modules
+      run: make dep
+
     - name: Run lint
       uses: golangci/golangci-lint-action@v2.5.2
       with:
         version: latest
-        args: --timeout 5m0s
-        
+
   tests:
     runs-on: ubuntu-latest
     steps:
@@ -35,25 +40,31 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17
-      
+        go-version: 1.16
+
     - name: Install dependencies
       run: sudo apt update && sudo apt install make -y
 
     - name: Run tests
       run: make test
 
-  build:
+  docker-image:
     runs-on: ubuntu-latest
-    
+    needs:
+    - tests
+    - lint
+
     permissions:
       packages: write
       contents: read
-      
+
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
-      
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v1 
       with:
@@ -65,6 +76,7 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         context: .
+        cache-from: type=registry,ref=ghcr.io/${GITHUB_REPOSITORY}:latest
         push: true
         tags: |
           ghcr.io/${GITHUB_REPOSITORY}:latest
