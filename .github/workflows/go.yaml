@@ -30,9 +30,9 @@ jobs:
       run: sudo apt update && sudo apt install make -y
 
     - name: Run lint
-      uses: golangci/golangci-lint-action@v2
+      uses: golangci/golangci-lint-action@v2.5.2
       with:
-        version: v1.43  
+        version: latest  
 
     - name: Run tests
       run: make test
