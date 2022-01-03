@@ -12,8 +12,14 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    
+    permissions:
+      packages: write
+      contents: read
+      
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout repo
+      uses: actions/checkout@v2
 
     - name: Set up Go
       uses: actions/setup-go@v2
@@ -23,5 +29,27 @@ jobs:
     - name: Install dependencies
       run: sudo apt update && sudo apt install make -y
 
-    - name: Build
-      run: make build
+    - name: Run lint
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: v1.43  
+
+    - name: Run tests
+      run: make test
+      
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v1 
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and Push Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: |
+          ghcr.io/${GITHUB_REPOSITORY}:latest
+          ghcr.io/${GITHUB_REPOSITORY}:${GITHUB_REF_NAME}
+        
