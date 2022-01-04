@@ -71,9 +71,9 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         context: .
-        cache-from: type=registry,ref=ghcr.io/${GITHUB_REPOSITORY}:latest
+        cache-from: type=registry,ref=ghcr.io/${{ env.GITHUB_REPOSITORY }}:latest
         push: true
         tags: |
-          ghcr.io/${GITHUB_REPOSITORY}:latest
-          ghcr.io/${GITHUB_REPOSITORY}:${GITHUB_REF_NAME}
+          ghcr.io/${{ env.GITHUB_REPOSITORY }}:latest
+          ghcr.io/${{ env.GITHUB_REPOSITORY }}:${{ env.GITHUB_REF_NAME }}
         
