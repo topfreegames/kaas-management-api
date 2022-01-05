@@ -2,9 +2,9 @@ name: Go
 
 on:
   push:
-    branches:
-    - main
-    - feat/create-api
+    branches: [ main ]
+    tags:
+      - '*'
   pull_request:
     branches: [ main ]
 
@@ -45,6 +45,7 @@ jobs:
 
   docker-image:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' }}
     needs:
     - tests
     - lint
