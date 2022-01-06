@@ -26,7 +26,11 @@ func (k Kubernetes) GetClusterInfrastructure(infrastructureKind string) (*Cluste
 			Provider: "kops",
 		}
 		return infrastructure, nil
+	case "KopsControlPlane":
+		infrastructure = &ClusterInfrastructure{
+			Provider: "kops",
+		}
+		return infrastructure, nil
 	}
-
 	return nil, clientError.NewClientError(nil, clientError.KindNotFound, fmt.Sprintf("The Kind %s could not be found", infrastructureKind))
 }
