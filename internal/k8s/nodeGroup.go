@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/topfreegames/kaas-management-api/util/clientError"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"log"
 	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	clusterapiexpv1beta1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
 	"strings"
@@ -57,6 +59,11 @@ func (k Kubernetes) GetMachinePool(clusterName string, nodeGroupName string) (*c
 	err = json.Unmarshal(machinePoolRawJson, &machinePool)
 	if err != nil {
 		return nil, fmt.Errorf("could not Unmarshal machinepool JSON into clusterAPI list: %v", err)
+	}
+
+	err = ValidateMachineTemplateComponents(machinePool.Spec.Template)
+	if err != nil {
+		return nil, clientError.NewClientError(err, clientError.InvalidConfiguration, fmt.Sprintf("MachinePool %s doesn't have a valid configuration", machinePool.Name))
 	}
 
 	return &machinePool, nil
@@ -125,6 +132,11 @@ func (k Kubernetes) GetMachineDeployment(clusterName string, nodeGroupName strin
 		return nil, fmt.Errorf("could not Unmarshal machinedeployment JSON into clusterAPI list: %v", err)
 	}
 
+	err = ValidateMachineTemplateComponents(machineDeployment.Spec.Template)
+	if err != nil {
+		return nil, clientError.NewClientError(err, clientError.InvalidConfiguration, fmt.Sprintf("MachineDeployment %s doesn't have a valid configuration", machineDeployment.Name))
+	}
+
 	return &machineDeployment, nil
 }
 
@@ -171,9 +183,12 @@ func (k Kubernetes) GetNodeGroup(clusterName string, nodeGroupName string) (*Nod
 	// Check if is machinePool
 	machinePool, machinePoolErr := k.GetMachinePool(clusterName, nodeGroupName)
 	if machinePoolErr != nil {
-		_, ok := machinePoolErr.(*clientError.ClientError)
+		clientErr, ok := machinePoolErr.(*clientError.ClientError)
 		if !ok {
 			return nil, fmt.Errorf("failed getting machinepool for node group %s in cluster %s: %v", nodeGroupName, clusterName, machinePoolErr)
+		}
+		if clientErr.ErrorMessage != clientError.ResourceNotFound {
+			return nil, clientError.NewClientError(clientErr, clientError.InvalidConfiguration, fmt.Sprintf("NodeGroup %s configuration is invalid", nodeGroupName))
 		}
 	} else {
 		nodeGroup = &NodeGroup{
@@ -188,9 +203,12 @@ func (k Kubernetes) GetNodeGroup(clusterName string, nodeGroupName string) (*Nod
 
 	machineDeployment, machineDeploymentErr := k.GetMachineDeployment(clusterName, nodeGroupName)
 	if machineDeploymentErr != nil {
-		_, ok := machineDeploymentErr.(*clientError.ClientError)
+		clientErr, ok := machineDeploymentErr.(*clientError.ClientError)
 		if !ok {
 			return nil, fmt.Errorf("failed getting machinedeployment for node group %s in cluster %s: %v", nodeGroupName, clusterName, machinePoolErr)
+		}
+		if clientErr.ErrorMessage != clientError.ResourceNotFound {
+			return nil, clientError.NewClientError(clientErr, clientError.InvalidConfiguration, fmt.Sprintf("NodeGroup %s configuration is invalid", nodeGroupName))
 		}
 	} else {
 		nodeGroup = &NodeGroup{
@@ -203,7 +221,7 @@ func (k Kubernetes) GetNodeGroup(clusterName string, nodeGroupName string) (*Nod
 		return nodeGroup, nil
 	}
 
-	finalError := fmt.Errorf("NodePoolError: %v, %v", machinePoolErr, machineDeploymentErr)
+	finalError := fmt.Errorf("NodePoolError: %s, %s", machinePoolErr.Error(), machineDeploymentErr.Error())
 	return nil, clientError.NewClientError(finalError, clientError.ResourceNotFound, fmt.Sprintf("Could not find the NodeGroup %v in the cluster %v", nodeGroupName, clusterName))
 }
 
@@ -211,6 +229,7 @@ func (k Kubernetes) GetNodeGroup(clusterName string, nodeGroupName string) (*Nod
 func (k Kubernetes) ListNodeGroup(clusterName string) ([]NodeGroup, error) {
 
 	var nodeGroups []NodeGroup
+	var validationErr error
 
 	// Check if is machinePool
 	machinePools, machinePoolErr := k.ListMachinePool(clusterName)
@@ -221,6 +240,11 @@ func (k Kubernetes) ListNodeGroup(clusterName string) ([]NodeGroup, error) {
 		}
 	} else {
 		for _, machinePool := range machinePools.Items {
+			validationErr = ValidateMachineTemplateComponents(machinePool.Spec.Template)
+			if validationErr != nil {
+				log.Printf("skipping invalid MachinePool %s: %s", machinePool.Name, validationErr.Error())
+				continue
+			}
 			nodeGroup := NodeGroup{
 				Name:               GetNodeGroupShortName(machinePool.Spec.ClusterName, machinePool.Name),
 				Cluster:            machinePool.Spec.ClusterName,
@@ -230,6 +254,11 @@ func (k Kubernetes) ListNodeGroup(clusterName string) ([]NodeGroup, error) {
 			}
 			nodeGroups = append(nodeGroups, nodeGroup)
 		}
+
+		if len(nodeGroups) == 0 {
+			return nil, clientError.NewClientError(validationErr, clientError.EmptyResponse, fmt.Sprintf("No valid NodeGroups were found in the cluster %v, some Nodegroups have invalid configuration", clusterName))
+		}
+
 		return nodeGroups, nil
 	}
 
@@ -241,6 +270,11 @@ func (k Kubernetes) ListNodeGroup(clusterName string) ([]NodeGroup, error) {
 		}
 	} else {
 		for _, machineDeployment := range machineDeployments.Items {
+			validationErr = ValidateMachineTemplateComponents(machineDeployment.Spec.Template)
+			if validationErr != nil {
+				log.Printf("skipping invalid MachineDeployment %s: %s", machineDeployment.Name, validationErr.Error())
+				continue
+			}
 			nodeGroup := NodeGroup{
 				Name:               GetNodeGroupShortName(machineDeployment.Spec.ClusterName, machineDeployment.Name),
 				Cluster:            machineDeployment.Spec.ClusterName,
@@ -250,9 +284,34 @@ func (k Kubernetes) ListNodeGroup(clusterName string) ([]NodeGroup, error) {
 			}
 			nodeGroups = append(nodeGroups, nodeGroup)
 		}
+
+		if len(nodeGroups) == 0 {
+			return nil, clientError.NewClientError(nil, clientError.EmptyResponse, fmt.Sprintf("No valid NodeGroups were found in the cluster %v, some Nodegroups have invalid configuration", clusterName))
+		}
+
 		return nodeGroups, nil
 	}
 
 	finalError := fmt.Errorf("NodePoolError: %v, %v", machinePoolErr, machineDeploymentErr)
 	return nil, clientError.NewClientError(finalError, clientError.EmptyResponse, fmt.Sprintf("No NodeGroups were found in the cluster %v", clusterName))
+}
+
+func ValidateMachineTemplateComponents(machineTemplate clusterapiv1beta1.MachineTemplateSpec) error {
+
+	if machineTemplate.Spec.InfrastructureRef == (v1.ObjectReference{}) {
+		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "MachineTemplate doesn't have a infrastructure Reference")
+	}
+
+	if machineTemplate.Spec.InfrastructureRef.Name == "" {
+		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "MachineTemplate infrastructure reference name is empty")
+	}
+
+	if machineTemplate.Spec.InfrastructureRef.Kind == "" {
+		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "MachineTemplate infrastructure Kind is empty")
+	}
+
+	if machineTemplate.Spec.InfrastructureRef.APIVersion == "" {
+		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "MachineTemplate infrastructure APIVersion is empty")
+	}
+	return nil
 }

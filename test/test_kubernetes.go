@@ -136,6 +136,17 @@ func NewTestKopsMachinePool(name string, clusterName string) *clusterapikopsv1al
 }
 
 func NewTestMachinePool(name string, clusterName string, infrastructureKind string, infrastructureName string, infrastructureApiVersion string) *clusterapiexpv1beta1.MachinePool {
+	var infrastructureRef corev1.ObjectReference
+
+	if infrastructureName != "" {
+		infrastructureRef = corev1.ObjectReference{
+			Kind:       infrastructureKind,
+			Namespace:  clusterName,
+			Name:       infrastructureName,
+			APIVersion: infrastructureApiVersion,
+		}
+	}
+
 	namespace := GetTestClusterNamespace(clusterName)
 	testResource := clusterapiexpv1beta1.MachinePool{
 		TypeMeta: metav1.TypeMeta{
@@ -153,14 +164,9 @@ func NewTestMachinePool(name string, clusterName string, infrastructureKind stri
 			Template: clusterapiv1beta1.MachineTemplateSpec{
 				ObjectMeta: clusterapiv1beta1.ObjectMeta{},
 				Spec: clusterapiv1beta1.MachineSpec{
-					ClusterName: clusterName,
-					Bootstrap:   clusterapiv1beta1.Bootstrap{},
-					InfrastructureRef: corev1.ObjectReference{
-						Kind:       infrastructureKind,
-						Namespace:  clusterName,
-						Name:       infrastructureName,
-						APIVersion: infrastructureApiVersion,
-					},
+					ClusterName:       clusterName,
+					Bootstrap:         clusterapiv1beta1.Bootstrap{},
+					InfrastructureRef: infrastructureRef,
 				},
 			},
 		},
