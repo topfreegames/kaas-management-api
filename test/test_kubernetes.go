@@ -49,6 +49,30 @@ func GetTestClusterNamespace(clusterName string) string {
 }
 
 func NewTestCluster(name string, controlPlaneName string, controPlaneKind string, controlPlaneApiVersion string, infrastructureName string, infrastructureKind string, infrastructureApiVersion string) *clusterapiv1beta1.Cluster {
+
+	var (
+		controlplaneRef   *corev1.ObjectReference
+		infrastructureRef *corev1.ObjectReference
+	)
+
+	if controlPlaneName != "" {
+		controlplaneRef = &corev1.ObjectReference{
+			Kind:       controPlaneKind,
+			Namespace:  name,
+			Name:       controlPlaneName,
+			APIVersion: controlPlaneApiVersion,
+		}
+	}
+
+	if infrastructureName != "" {
+		infrastructureRef = &corev1.ObjectReference{
+			Kind:       infrastructureKind,
+			Namespace:  name,
+			Name:       infrastructureName,
+			APIVersion: infrastructureApiVersion,
+		}
+	}
+
 	namespace := GetTestClusterNamespace(name)
 	testResource := clusterapiv1beta1.Cluster{
 		TypeMeta: metav1.TypeMeta{
@@ -77,18 +101,8 @@ func NewTestCluster(name string, controlPlaneName string, controPlaneKind string
 				Host: "api." + name + ".cluster.example.com",
 				Port: 443,
 			},
-			ControlPlaneRef: &corev1.ObjectReference{
-				Kind:       controPlaneKind,
-				Namespace:  name,
-				Name:       controlPlaneName,
-				APIVersion: controlPlaneApiVersion,
-			},
-			InfrastructureRef: &corev1.ObjectReference{
-				Kind:       infrastructureKind,
-				Namespace:  name,
-				Name:       infrastructureName,
-				APIVersion: infrastructureApiVersion,
-			},
+			ControlPlaneRef:   controlplaneRef,
+			InfrastructureRef: infrastructureRef,
 		},
 		Status: clusterapiv1beta1.ClusterStatus{},
 	}

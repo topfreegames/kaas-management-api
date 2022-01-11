@@ -47,6 +47,11 @@ func (k Kubernetes) GetCluster(clusterName string) (*clusterapiv1beta1.Cluster, 
 		return nil, fmt.Errorf("could not Unmarshal Clusters JSON into clusterAPI list: %v", err)
 	}
 
+	err = ValidateClusterComponents(&cluster)
+	if err != nil {
+		return nil, err
+	}
+
 	return &cluster, nil
 }
 
@@ -81,4 +86,19 @@ func (k Kubernetes) ListClusters() (*clusterapiv1beta1.ClusterList, error) {
 	}
 
 	return &clusters, nil
+}
+
+func ValidateClusterComponents(cluster *clusterapiv1beta1.Cluster) error {
+	if cluster.Spec.InfrastructureRef == nil {
+		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "Cluster doesn't have a infrastructure Reference")
+	}
+
+	if cluster.Spec.ControlPlaneRef == nil {
+		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "Cluster doesn't have a ControlPlane Reference")
+	}
+
+	if !cluster.Spec.ControlPlaneEndpoint.IsValid() {
+		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "Cluster doesn't have a valid ControlPlane endpoint")
+	}
+	return nil
 }

@@ -1,12 +1,12 @@
 .PHONY: all dep build test lint fix
 
-all: dep build
+all: fix lint test dep build
 
 dep:
 	@echo "  >  Making sure go.mod matches the source code"
 	go mod tidy -v
 
-build:
+build: dep
 	@echo "  >  build"
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build/manager
 

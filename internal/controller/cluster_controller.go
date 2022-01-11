@@ -29,6 +29,9 @@ func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
 			} else {
 				clientError.ErrorHandler(c, err, "Unhandled Error", http.StatusInternalServerError)
 			}
+			if clientErr.ErrorMessage == clientError.InvalidConfiguration {
+				clientError.ErrorHandler(c, err, fmt.Sprintf("Cluster have a invalid config: %s", clientErr.ErrorDetailedMessage), http.StatusInternalServerError)
+			}
 		}
 		return
 	}
@@ -91,6 +94,13 @@ func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 	}
 
 	for _, clusterApiCR := range clusterApiListCR.Items {
+
+		err := k8s.ValidateClusterComponents(&clusterApiCR)
+		if err != nil {
+			log.Printf("Skiping cluster %s because of invalid configuration: %v", clusterApiCR.Name, err.Error())
+			continue
+		}
+
 		controlPlane, err := controller.K8sInstance.GetControlPlane(clusterApiCR.Spec.ControlPlaneRef.Kind)
 		if err != nil {
 			log.Printf("Error getting cluster controlplane for cluster %s: %v", clusterApiCR.Name, err.Error())
