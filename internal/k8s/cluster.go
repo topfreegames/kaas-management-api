@@ -7,6 +7,7 @@ import (
 	"github.com/topfreegames/kaas-management-api/util/clientError"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"log"
 	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"strings"
 )
@@ -85,7 +86,26 @@ func (k Kubernetes) ListClusters() (*clusterapiv1beta1.ClusterList, error) {
 		return nil, clientError.NewClientError(err, clientError.EmptyResponse, "no Clusters were found")
 	}
 
-	return &clusters, nil
+	clustersValidated := clusterapiv1beta1.ClusterList{
+		TypeMeta: clusters.TypeMeta,
+		ListMeta: clusters.ListMeta,
+		Items:    []clusterapiv1beta1.Cluster{},
+	}
+
+	for _, cluster := range clusters.Items {
+		err := ValidateClusterComponents(&cluster)
+		if err != nil {
+			log.Printf("Skiping cluster %s because of invalid configuration: %v", cluster.Name, err.Error())
+			continue
+		}
+		clustersValidated.Items = append(clustersValidated.Items, cluster)
+	}
+
+	if len(clustersValidated.Items) == 0 {
+		return nil, clientError.NewClientError(nil, clientError.EmptyResponse, "no valid clusters were found, some clusters have invalid configuration")
+	}
+
+	return &clustersValidated, nil
 }
 
 func ValidateClusterComponents(cluster *clusterapiv1beta1.Cluster) error {

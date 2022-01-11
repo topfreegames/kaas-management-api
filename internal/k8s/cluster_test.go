@@ -177,6 +177,50 @@ func Test_ListClusters_Success(t *testing.T) {
 	}
 }
 
+func Test_ListClusters_Error(t *testing.T) {
+	testCases := []test.TestCase{
+		{
+			Name:            "ListClusters should return EmptyResponse when have only one cluster without infrastructure reference",
+			ExpectedSuccess: nil,
+			ExpectedClientError: &clientError.ClientError{
+				ErrorCause:           nil,
+				ErrorDetailedMessage: "no valid clusters were found, some clusters have invalid configuration",
+				ErrorMessage:         clientError.EmptyResponse,
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestCluster("testcluster", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "", "", ""),
+			},
+		},
+		{
+			Name:            "ListClusters should return EmptyResponse when have only one cluster without control plane reference",
+			ExpectedSuccess: nil,
+			ExpectedClientError: &clientError.ClientError{
+				ErrorCause:           nil,
+				ErrorDetailedMessage: "no valid clusters were found, some clusters have invalid configuration",
+				ErrorMessage:         clientError.EmptyResponse,
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestCluster("testcluster", "", "", "", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
+			},
+		},
+	}
+
+	fakeClient := test.NewK8sFakeDynamicClient()
+	k := &Kubernetes{K8sAuth: &Auth{
+		DynamicClient: fakeClient,
+	}}
+
+	for _, testCase := range testCases {
+		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
+
+		t.Run(testCase.Name, func(t *testing.T) {
+			_, err := k.ListClusters()
+			assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
+			assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
+		})
+	}
+}
+
 func Test_ValidateClusterComponents_Success(t *testing.T) {
 	testCases := []test.TestCase{
 		{

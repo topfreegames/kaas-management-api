@@ -264,7 +264,7 @@ func Test_ClusterListHandler_ErrorEmptyResponse(t *testing.T) {
 			Name:            "Error getting cluster list in clusterV1 endpoint should return empty response for invalid cluster in list",
 			ExpectedSuccess: nil,
 			ExpectedHTTPError: &apiError.ClientErrorResponse{
-				ErrorMessage: "No Clusters were found",
+				ErrorMessage: "No clusters were found",
 				ErrorType:    clientError.EmptyResponse,
 				HttpCode:     http.StatusNotFound,
 			},
