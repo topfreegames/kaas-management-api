@@ -26,11 +26,10 @@ func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
 		} else {
 			if clientErr.ErrorMessage == clientError.ResourceNotFound {
 				clientError.ErrorHandler(c, err, "Cluster not found", http.StatusNotFound)
+			} else if clientErr.ErrorMessage == clientError.InvalidConfiguration {
+				clientError.ErrorHandler(c, err, clientErr.ErrorDetailedMessage, http.StatusInternalServerError)
 			} else {
 				clientError.ErrorHandler(c, err, "Unhandled Error", http.StatusInternalServerError)
-			}
-			if clientErr.ErrorMessage == clientError.InvalidConfiguration {
-				clientError.ErrorHandler(c, err, fmt.Sprintf("Cluster have a invalid config: %s", clientErr.ErrorDetailedMessage), http.StatusInternalServerError)
 			}
 		}
 		return

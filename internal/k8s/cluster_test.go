@@ -71,7 +71,7 @@ func Test_GetCluster_Error(t *testing.T) {
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "Cluster doesn't have a ControlPlane Reference",
+				ErrorDetailedMessage: "Cluster testcluster have an invalid configuration",
 				ErrorMessage:         clientError.InvalidConfiguration,
 			},
 			Request: &test.K8sRequest{
@@ -86,7 +86,7 @@ func Test_GetCluster_Error(t *testing.T) {
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "Cluster doesn't have a infrastructure Reference",
+				ErrorDetailedMessage: "Cluster testcluster have an invalid configuration",
 				ErrorMessage:         clientError.InvalidConfiguration,
 			},
 			Request: &test.K8sRequest{

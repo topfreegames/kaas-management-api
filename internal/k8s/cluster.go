@@ -50,7 +50,7 @@ func (k Kubernetes) GetCluster(clusterName string) (*clusterapiv1beta1.Cluster, 
 
 	err = ValidateClusterComponents(&cluster)
 	if err != nil {
-		return nil, err
+		return nil, clientError.NewClientError(err, clientError.InvalidConfiguration, fmt.Sprintf("Cluster %s have an invalid configuration", clusterName))
 	}
 
 	return &cluster, nil
