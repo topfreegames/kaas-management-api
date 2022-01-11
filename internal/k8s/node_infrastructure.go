@@ -46,7 +46,7 @@ func (k Kubernetes) GetNodeInfrastructure(clusterName, infrastructureKind string
 		if err != nil {
 			clientErr, ok := err.(*clientError.ClientError)
 			if !ok {
-				return nil, fmt.Errorf("an error has ocurred while feching kopsmachinepool infrastructure: %v", err)
+				return nil, fmt.Errorf("an error has ocurred while feching kopsmachinepool infrastructure: %s", err.Error())
 			}
 			return nil, clientError.NewClientError(err, clientErr.ErrorMessage, "Could not retrieve the infrastructure")
 		}
@@ -78,7 +78,7 @@ func (k Kubernetes) GetKopsMachinePool(clusterName string, infrastructureName st
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested KopsMachinePool %s was not found in namespace %s!", infrastructureName, clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting kopsmachinepool from Kubernetes API: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting kopsmachinepool from Kubernetes API: %s\n", statusError.ErrStatus.Message)
 		}
 		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}

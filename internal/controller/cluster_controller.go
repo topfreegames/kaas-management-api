@@ -26,6 +26,8 @@ func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
 		} else {
 			if clientErr.ErrorMessage == clientError.ResourceNotFound {
 				clientError.ErrorHandler(c, err, "Cluster not found", http.StatusNotFound)
+			} else if clientErr.ErrorMessage == clientError.InvalidConfiguration {
+				clientError.ErrorHandler(c, err, clientErr.ErrorDetailedMessage, http.StatusInternalServerError)
 			} else {
 				clientError.ErrorHandler(c, err, "Unhandled Error", http.StatusInternalServerError)
 			}
@@ -83,6 +85,8 @@ func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 		} else {
 			if clientErr.ErrorMessage == clientError.ResourceNotFound {
 				clientError.ErrorHandler(c, err, "Cluster not found", http.StatusNotFound)
+			} else if clientErr.ErrorMessage == clientError.EmptyResponse {
+				clientError.ErrorHandler(c, err, "No clusters were found", http.StatusNotFound)
 			} else {
 				clientError.ErrorHandler(c, err, "Unhandled Error", http.StatusInternalServerError)
 			}
@@ -91,15 +95,16 @@ func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 	}
 
 	for _, clusterApiCR := range clusterApiListCR.Items {
+
 		controlPlane, err := controller.K8sInstance.GetControlPlane(clusterApiCR.Spec.ControlPlaneRef.Kind)
 		if err != nil {
-			log.Printf("Error getting cluster controlplane for cluster %s: %v", clusterApiCR.Name, err.Error())
+			log.Printf("Error getting cluster controlplane for cluster %s: %s", clusterApiCR.Name, err.Error())
 			continue
 		}
 
 		infrastructure, err := controller.K8sInstance.GetClusterInfrastructure(clusterApiCR.Spec.InfrastructureRef.Kind)
 		if err != nil {
-			log.Printf("Error getting cluster infrastructure for %s: %v", clusterApiCR.Name, err.Error())
+			log.Printf("Error getting cluster infrastructure for %s: %s", clusterApiCR.Name, err.Error())
 			continue
 		}
 		cluster := writeClusterV1(&clusterApiCR, controlPlane, infrastructure)

@@ -76,7 +76,7 @@ func Test_GetNodeGroup_Success(t *testing.T) {
 	}
 }
 
-func Test_GetNodeGroup_ErrorNotFound(t *testing.T) {
+func Test_GetNodeGroup_Error(t *testing.T) {
 	testCases := []test.TestCase{
 		{
 			Name:            "GetNodeGroup should return Error for non-existent resource",
@@ -108,8 +108,24 @@ func Test_GetNodeGroup_ErrorNotFound(t *testing.T) {
 				Cluster:      "TestCluster3",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("TestCluster2-TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+			},
+		},
+		{
+			Name:            "GetNodeGroup should return Error for node without infrastructure",
+			ExpectedSuccess: nil,
+			ExpectedClientError: &clientError.ClientError{
+				ErrorCause:           nil,
+				ErrorDetailedMessage: "NodeGroup TestMachinePool configuration is invalid",
+				ErrorMessage:         clientError.InvalidConfiguration,
+			},
+			Request: &test.K8sRequest{
+				ResourceName: "TestMachinePool",
+				Cluster:      "TestCluster1",
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "", "", ""),
 			},
 		},
 	}
@@ -212,7 +228,7 @@ func Test_ListNodeGroup_Success(t *testing.T) {
 	}
 }
 
-func Test_ListNodeGroup_ErrorEmptyResponse(t *testing.T) {
+func Test_ListNodeGroup_Error(t *testing.T) {
 	testCases := []test.TestCase{
 		{
 			Name:            "ListNodeGroup should return Error for non-existent resources in cluster",
@@ -245,6 +261,22 @@ func Test_ListNodeGroup_ErrorEmptyResponse(t *testing.T) {
 			K8sTestResources: []runtime.Object{
 				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+			},
+		},
+		{
+			Name:            "ListNodeGroup should return EmptyResponse for nodegroup without infrastructure",
+			ExpectedSuccess: nil,
+			ExpectedClientError: &clientError.ClientError{
+				ErrorCause:           nil,
+				ErrorDetailedMessage: "No valid NodeGroups were found in the cluster TestCluster2, some Nodegroups have invalid configuration",
+				ErrorMessage:         clientError.EmptyResponse,
+			},
+			Request: &test.K8sRequest{
+				Cluster: "TestCluster2",
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("TestCluster2-TestMachineDeployment", "TestCluster2", "", "", ""),
 			},
 		},
 	}
@@ -304,7 +336,7 @@ func Test_GetMachinePool_Success(t *testing.T) {
 	}
 }
 
-func Test_GetMachinePool_ErrorNotFound(t *testing.T) {
+func Test_GetMachinePool_Error(t *testing.T) {
 	testCases := []test.TestCase{
 		{
 			Name:            "GetMachinepool should return Error for non-existent resource",
@@ -319,7 +351,7 @@ func Test_GetMachinePool_ErrorNotFound(t *testing.T) {
 				Cluster:      "TestCluster1",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 			},
 		},
 		{
@@ -335,7 +367,23 @@ func Test_GetMachinePool_ErrorNotFound(t *testing.T) {
 				Cluster:      "TestCluster3",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+			},
+		},
+		{
+			Name:            "GetMachinepool should return Error for a machinePool without infrastructure",
+			ExpectedSuccess: nil,
+			ExpectedClientError: &clientError.ClientError{
+				ErrorCause:           nil,
+				ErrorDetailedMessage: "MachinePool TestCluster1-TestMachinePool doesn't have a valid configuration",
+				ErrorMessage:         clientError.InvalidConfiguration,
+			},
+			Request: &test.K8sRequest{
+				ResourceName: "TestMachinePool",
+				Cluster:      "TestCluster1",
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "", "", ""),
 			},
 		},
 	}
@@ -424,7 +472,7 @@ func Test_ListMachinePool_Success(t *testing.T) {
 	}
 }
 
-func Test_ListMachinePool_ErrorEmptyResponse(t *testing.T) {
+func Test_ListMachinePool_Error(t *testing.T) {
 	testCases := []test.TestCase{
 		{
 			Name:            "ListMachinePool should return Error for non-existent resources in cluster",
@@ -515,7 +563,7 @@ func Test_GetMachineDeployment_Success(t *testing.T) {
 	}
 }
 
-func Test_GetMachineDeployment_ErrorNotFound(t *testing.T) {
+func Test_GetMachineDeployment_Error(t *testing.T) {
 	testCases := []test.TestCase{
 		{
 			Name:            "GetMachineDeployment should return Error for non-existent resource",
@@ -530,7 +578,7 @@ func Test_GetMachineDeployment_ErrorNotFound(t *testing.T) {
 				Cluster:      "TestCluster1",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+				test.NewTestMachineDeployment("TestCluster1-TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
 			},
 		},
 		{
@@ -546,7 +594,23 @@ func Test_GetMachineDeployment_ErrorNotFound(t *testing.T) {
 				Cluster:      "TestCluster3",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+				test.NewTestMachineDeployment("TestCluster1-TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+			},
+		},
+		{
+			Name:            "GetMachinepool should return Error for a machinePool without infrastructure",
+			ExpectedSuccess: nil,
+			ExpectedClientError: &clientError.ClientError{
+				ErrorCause:           nil,
+				ErrorDetailedMessage: "MachineDeployment TestCluster1-TestMachineDeployment doesn't have a valid configuration",
+				ErrorMessage:         clientError.InvalidConfiguration,
+			},
+			Request: &test.K8sRequest{
+				ResourceName: "TestMachineDeployment",
+				Cluster:      "TestCluster1",
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestMachineDeployment("TestCluster1-TestMachineDeployment", "TestCluster1", "", "", ""),
 			},
 		},
 	}
@@ -635,7 +699,7 @@ func Test_ListMachineDeployment_Success(t *testing.T) {
 	}
 }
 
-func Test_ListMachineDeployment_ErrorEmptyResponse(t *testing.T) {
+func Test_ListMachineDeployment_Error(t *testing.T) {
 	testCases := []test.TestCase{
 		{
 			Name:            "ListMachineDeployment should return Error for non-existent resources in cluster",
@@ -682,6 +746,38 @@ func Test_ListMachineDeployment_ErrorEmptyResponse(t *testing.T) {
 
 		t.Run(testCase.Name, func(t *testing.T) {
 			_, err := k.ListMachineDeployment(request.Cluster)
+			assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
+			assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
+		})
+	}
+}
+
+func Test_ValidateMachineTemplateComponents_Error(t *testing.T) {
+	testCases := []test.TestCase{
+		{
+			Name:            "Should return an error for a NodeGroup without infrastructure",
+			ExpectedSuccess: nil,
+			ExpectedClientError: &clientError.ClientError{
+				ErrorCause:           nil,
+				ErrorDetailedMessage: "MachineTemplate doesn't have an infrastructure Reference",
+				ErrorMessage:         clientError.InvalidConfiguration,
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestMachinePool("TestMachinePool", "TestCluster2", "", "", ""),
+			},
+		},
+	}
+
+	fakeClient := test.NewK8sFakeDynamicClient()
+	k := &Kubernetes{K8sAuth: &Auth{
+		DynamicClient: fakeClient,
+	}}
+
+	for _, testCase := range testCases {
+		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
+		machinePool, _ := testCase.K8sTestResources[0].(*clusterapiexpv1beta1.MachinePool)
+		t.Run(testCase.Name, func(t *testing.T) {
+			err := ValidateMachineTemplateComponents(machinePool.Spec.Template)
 			assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
 			assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 		})

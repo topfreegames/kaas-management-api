@@ -7,6 +7,7 @@ import (
 	"github.com/topfreegames/kaas-management-api/util/clientError"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"log"
 	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"strings"
 )
@@ -31,7 +32,7 @@ func (k Kubernetes) GetCluster(clusterName string) (*clusterapiv1beta1.Cluster, 
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested cluster %s was not found in namespace %s!", clusterName, namespace))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting Cluster from Kubernetes API: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting Cluster from Kubernetes API: %s\n", statusError.ErrStatus.Message)
 		}
 		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
@@ -47,6 +48,11 @@ func (k Kubernetes) GetCluster(clusterName string) (*clusterapiv1beta1.Cluster, 
 		return nil, fmt.Errorf("could not Unmarshal Clusters JSON into clusterAPI list: %v", err)
 	}
 
+	err = ValidateClusterComponents(&cluster)
+	if err != nil {
+		return nil, clientError.NewClientError(err, clientError.InvalidConfiguration, fmt.Sprintf("Cluster %s have an invalid configuration", clusterName))
+	}
+
 	return &cluster, nil
 }
 
@@ -57,9 +63,9 @@ func (k Kubernetes) ListClusters() (*clusterapiv1beta1.ClusterList, error) {
 	clustersRaw, err := client.Resource(ClusterResourceSchemaV1beta1).List(context.TODO(), metav1.ListOptions{})
 
 	if errors.IsNotFound(err) {
-		return nil, clientError.NewClientError(err, clientError.ResourceNotFound, "Could not find any cluster in the Kubernetes API")
+		return nil, clientError.NewClientError(err, clientError.ResourceNotFound, "could not find any cluster in the Kubernetes API")
 	} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-		return nil, fmt.Errorf("Error getting Cluster from Server API %v\n", statusError.ErrStatus.Message)
+		return nil, fmt.Errorf("Error getting Cluster from Server API %s\n", statusError.ErrStatus.Message)
 	} else if err != nil {
 		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
@@ -80,5 +86,39 @@ func (k Kubernetes) ListClusters() (*clusterapiv1beta1.ClusterList, error) {
 		return nil, clientError.NewClientError(err, clientError.EmptyResponse, "no Clusters were found")
 	}
 
-	return &clusters, nil
+	clustersValidated := clusterapiv1beta1.ClusterList{
+		TypeMeta: clusters.TypeMeta,
+		ListMeta: clusters.ListMeta,
+		Items:    []clusterapiv1beta1.Cluster{},
+	}
+
+	for _, cluster := range clusters.Items {
+		err := ValidateClusterComponents(&cluster)
+		if err != nil {
+			log.Printf("Skipping cluster %s because of invalid configuration: %s", cluster.Name, err.Error())
+			continue
+		}
+		clustersValidated.Items = append(clustersValidated.Items, cluster)
+	}
+
+	if len(clustersValidated.Items) == 0 {
+		return nil, clientError.NewClientError(nil, clientError.EmptyResponse, "no valid clusters were found, some clusters have invalid configuration")
+	}
+
+	return &clustersValidated, nil
+}
+
+func ValidateClusterComponents(cluster *clusterapiv1beta1.Cluster) error {
+	if cluster.Spec.InfrastructureRef == nil {
+		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "Cluster doesn't have an infrastructure Reference")
+	}
+
+	if cluster.Spec.ControlPlaneRef == nil {
+		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "Cluster doesn't have a ControlPlane Reference")
+	}
+
+	if !cluster.Spec.ControlPlaneEndpoint.IsValid() {
+		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "Cluster doesn't have a valid ControlPlane endpoint")
+	}
+	return nil
 }
