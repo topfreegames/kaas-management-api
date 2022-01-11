@@ -759,7 +759,7 @@ func Test_ValidateMachineTemplateComponents_Error(t *testing.T) {
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "MachineTemplate doesn't have a infrastructure Reference",
+				ErrorDetailedMessage: "MachineTemplate doesn't have an infrastructure Reference",
 				ErrorMessage:         clientError.InvalidConfiguration,
 			},
 			K8sTestResources: []runtime.Object{

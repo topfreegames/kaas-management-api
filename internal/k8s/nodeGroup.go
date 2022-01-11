@@ -45,7 +45,7 @@ func (k Kubernetes) GetMachinePool(clusterName string, nodeGroupName string) (*c
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested machinepool %s was not found for the cluster %s!", nodeGroupName, clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting machinepool from Kubernetes API: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting machinepool from Kubernetes API: %s\n", statusError.ErrStatus.Message)
 		}
 		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
@@ -81,7 +81,7 @@ func (k Kubernetes) ListMachinePool(clusterName string) (*clusterapiexpv1beta1.M
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("no Machinepools were found for the cluster %s!", clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting machinepool list from Kubernetes API: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting machinepool list from Kubernetes API: %s\n", statusError.ErrStatus.Message)
 		}
 		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
@@ -116,7 +116,7 @@ func (k Kubernetes) GetMachineDeployment(clusterName string, nodeGroupName strin
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested machinedeployment %s was not found for the cluster %s!", nodeGroupName, clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting machinedeployment from Kubernetes API: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting machinedeployment from Kubernetes API: %s\n", statusError.ErrStatus.Message)
 		}
 		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
@@ -185,7 +185,7 @@ func (k Kubernetes) GetNodeGroup(clusterName string, nodeGroupName string) (*Nod
 	if machinePoolErr != nil {
 		clientErr, ok := machinePoolErr.(*clientError.ClientError)
 		if !ok {
-			return nil, fmt.Errorf("failed getting machinepool for node group %s in cluster %s: %v", nodeGroupName, clusterName, machinePoolErr)
+			return nil, fmt.Errorf("failed getting machinepool for node group %s in cluster %s: %s", nodeGroupName, clusterName, machinePoolErr.Error())
 		}
 		if clientErr.ErrorMessage != clientError.ResourceNotFound {
 			return nil, clientError.NewClientError(clientErr, clientError.InvalidConfiguration, fmt.Sprintf("NodeGroup %s configuration is invalid", nodeGroupName))
@@ -205,7 +205,7 @@ func (k Kubernetes) GetNodeGroup(clusterName string, nodeGroupName string) (*Nod
 	if machineDeploymentErr != nil {
 		clientErr, ok := machineDeploymentErr.(*clientError.ClientError)
 		if !ok {
-			return nil, fmt.Errorf("failed getting machinedeployment for node group %s in cluster %s: %v", nodeGroupName, clusterName, machinePoolErr)
+			return nil, fmt.Errorf("failed getting machinedeployment for node group %s in cluster %s: %s", nodeGroupName, clusterName, machinePoolErr.Error())
 		}
 		if clientErr.ErrorMessage != clientError.ResourceNotFound {
 			return nil, clientError.NewClientError(clientErr, clientError.InvalidConfiguration, fmt.Sprintf("NodeGroup %s configuration is invalid", nodeGroupName))
@@ -222,7 +222,7 @@ func (k Kubernetes) GetNodeGroup(clusterName string, nodeGroupName string) (*Nod
 	}
 
 	finalError := fmt.Errorf("NodePoolError: %s, %s", machinePoolErr.Error(), machineDeploymentErr.Error())
-	return nil, clientError.NewClientError(finalError, clientError.ResourceNotFound, fmt.Sprintf("Could not find the NodeGroup %v in the cluster %v", nodeGroupName, clusterName))
+	return nil, clientError.NewClientError(finalError, clientError.ResourceNotFound, fmt.Sprintf("Could not find the NodeGroup %s in the cluster %s", nodeGroupName, clusterName))
 }
 
 // GetNodeGroup checks which CRD the cluster is using for its node groups (eg machinepool or machinedeployment) and returns a list in the Nodegroup struct format
@@ -286,20 +286,20 @@ func (k Kubernetes) ListNodeGroup(clusterName string) ([]NodeGroup, error) {
 		}
 
 		if len(nodeGroups) == 0 {
-			return nil, clientError.NewClientError(nil, clientError.EmptyResponse, fmt.Sprintf("No valid NodeGroups were found in the cluster %v, some Nodegroups have invalid configuration", clusterName))
+			return nil, clientError.NewClientError(nil, clientError.EmptyResponse, fmt.Sprintf("No valid NodeGroups were found in the cluster %s, some Nodegroups have invalid configuration", clusterName))
 		}
 
 		return nodeGroups, nil
 	}
 
-	finalError := fmt.Errorf("NodePoolError: %v, %v", machinePoolErr, machineDeploymentErr)
-	return nil, clientError.NewClientError(finalError, clientError.EmptyResponse, fmt.Sprintf("No NodeGroups were found in the cluster %v", clusterName))
+	finalError := fmt.Errorf("NodePoolError: %s, %s", machinePoolErr.Error(), machineDeploymentErr.Error())
+	return nil, clientError.NewClientError(finalError, clientError.EmptyResponse, fmt.Sprintf("No NodeGroups were found in the cluster %s", clusterName))
 }
 
 func ValidateMachineTemplateComponents(machineTemplate clusterapiv1beta1.MachineTemplateSpec) error {
 
 	if machineTemplate.Spec.InfrastructureRef == (v1.ObjectReference{}) {
-		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "MachineTemplate doesn't have a infrastructure Reference")
+		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "MachineTemplate doesn't have an infrastructure Reference")
 	}
 
 	if machineTemplate.Spec.InfrastructureRef.Name == "" {

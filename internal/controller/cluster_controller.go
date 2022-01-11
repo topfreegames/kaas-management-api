@@ -98,13 +98,13 @@ func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 
 		controlPlane, err := controller.K8sInstance.GetControlPlane(clusterApiCR.Spec.ControlPlaneRef.Kind)
 		if err != nil {
-			log.Printf("Error getting cluster controlplane for cluster %s: %v", clusterApiCR.Name, err.Error())
+			log.Printf("Error getting cluster controlplane for cluster %s: %s", clusterApiCR.Name, err.Error())
 			continue
 		}
 
 		infrastructure, err := controller.K8sInstance.GetClusterInfrastructure(clusterApiCR.Spec.InfrastructureRef.Kind)
 		if err != nil {
-			log.Printf("Error getting cluster infrastructure for %s: %v", clusterApiCR.Name, err.Error())
+			log.Printf("Error getting cluster infrastructure for %s: %s", clusterApiCR.Name, err.Error())
 			continue
 		}
 		cluster := writeClusterV1(&clusterApiCR, controlPlane, infrastructure)

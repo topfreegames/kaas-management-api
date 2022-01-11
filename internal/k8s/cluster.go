@@ -32,7 +32,7 @@ func (k Kubernetes) GetCluster(clusterName string) (*clusterapiv1beta1.Cluster, 
 		if errors.IsNotFound(err) {
 			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested cluster %s was not found in namespace %s!", clusterName, namespace))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting Cluster from Kubernetes API: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting Cluster from Kubernetes API: %s\n", statusError.ErrStatus.Message)
 		}
 		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
@@ -63,9 +63,9 @@ func (k Kubernetes) ListClusters() (*clusterapiv1beta1.ClusterList, error) {
 	clustersRaw, err := client.Resource(ClusterResourceSchemaV1beta1).List(context.TODO(), metav1.ListOptions{})
 
 	if errors.IsNotFound(err) {
-		return nil, clientError.NewClientError(err, clientError.ResourceNotFound, "Could not find any cluster in the Kubernetes API")
+		return nil, clientError.NewClientError(err, clientError.ResourceNotFound, "could not find any cluster in the Kubernetes API")
 	} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-		return nil, fmt.Errorf("Error getting Cluster from Server API %v\n", statusError.ErrStatus.Message)
+		return nil, fmt.Errorf("Error getting Cluster from Server API %s\n", statusError.ErrStatus.Message)
 	} else if err != nil {
 		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
@@ -95,7 +95,7 @@ func (k Kubernetes) ListClusters() (*clusterapiv1beta1.ClusterList, error) {
 	for _, cluster := range clusters.Items {
 		err := ValidateClusterComponents(&cluster)
 		if err != nil {
-			log.Printf("Skiping cluster %s because of invalid configuration: %v", cluster.Name, err.Error())
+			log.Printf("Skipping cluster %s because of invalid configuration: %s", cluster.Name, err.Error())
 			continue
 		}
 		clustersValidated.Items = append(clustersValidated.Items, cluster)
@@ -110,7 +110,7 @@ func (k Kubernetes) ListClusters() (*clusterapiv1beta1.ClusterList, error) {
 
 func ValidateClusterComponents(cluster *clusterapiv1beta1.Cluster) error {
 	if cluster.Spec.InfrastructureRef == nil {
-		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "Cluster doesn't have a infrastructure Reference")
+		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "Cluster doesn't have an infrastructure Reference")
 	}
 
 	if cluster.Spec.ControlPlaneRef == nil {

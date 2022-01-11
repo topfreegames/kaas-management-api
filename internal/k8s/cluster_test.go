@@ -271,7 +271,7 @@ func Test_ValidateClusterComponents_Error(t *testing.T) {
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "Cluster doesn't have a infrastructure Reference",
+				ErrorDetailedMessage: "Cluster doesn't have an infrastructure Reference",
 				ErrorMessage:         clientError.InvalidConfiguration,
 			},
 			K8sTestResources: []runtime.Object{
