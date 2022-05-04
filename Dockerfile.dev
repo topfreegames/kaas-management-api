@@ -1,4 +1,5 @@
 FROM alpine
 WORKDIR /app
 COPY ./build/manager ./manager
+COPY ./docs ./docs
 ENTRYPOINT [ "./manager" ]

@@ -5,10 +5,15 @@ all: fix lint test dep build
 dep:
 	@echo "  >  Making sure go.mod matches the source code"
 	go mod tidy -v
+	go install github.com/swaggo/swag/cmd/swag@latest
 
-build: dep
+build: dep build-docs
 	@echo "  >  build"
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -o build/manager
+
+build-docs:
+	@echo " > Running swaggo"
+	 swag init -g internal/server/server.go
 
 test:
 	@echo "> Running tests"

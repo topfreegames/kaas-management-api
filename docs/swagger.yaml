@@ -1,0 +1,199 @@
+definitions:
+  error.ClientErrorResponse:
+    properties:
+      errorcode:
+        type: integer
+      errormessage:
+        type: string
+      errortype:
+        type: string
+      httpcode:
+        type: integer
+    type: object
+  v1.Cluster:
+    properties:
+      apiserver:
+        type: string
+      infrastructureprovider:
+        type: string
+      kubeprovider:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      name:
+        type: string
+    type: object
+  v1.ClusterList:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/v1.Cluster'
+        type: array
+    type: object
+  v1.Metadata:
+    properties:
+      cluster:
+        type: string
+      environment:
+        type: string
+      machinetype:
+        type: string
+      max:
+        type: integer
+      min:
+        type: integer
+      region:
+        type: string
+      replicas:
+        type: integer
+      zones:
+        items:
+          type: string
+        type: array
+    type: object
+  v1.NodeGroup:
+    properties:
+      infrastructureprovider:
+        type: string
+      kubeprovider:
+        type: string
+      metadata:
+        $ref: '#/definitions/v1.Metadata'
+      name:
+        type: string
+    type: object
+  v1.NodeGroupList:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/v1.NodeGroup'
+        type: array
+    type: object
+info:
+  contact: {}
+paths:
+  /v1/clusters/:
+    get:
+      consumes:
+      - application/json
+      description: Return a list of clusters with their information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.ClusterList'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/error.ClientErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/error.ClientErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: List clusters
+      tags:
+      - Cluster
+  /v1/clusters/{clusterName}/:
+    get:
+      consumes:
+      - application/json
+      description: Get cluster by the full name and show its configuration
+      parameters:
+      - description: Cluster Name
+        in: path
+        name: clusterName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.Cluster'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/error.ClientErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/error.ClientErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Get a cluster
+      tags:
+      - Cluster
+  /v1/clusters/{clusterName}/nodegroup/{nodeGroupName}/:
+    get:
+      consumes:
+      - application/json
+      description: Shows the information about a node group of a cluster
+      parameters:
+      - description: Cluster Name
+        in: path
+        name: clusterName
+        required: true
+        type: string
+      - description: Node Group Name
+        in: path
+        name: nodeGroupName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.NodeGroup'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/error.ClientErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/error.ClientErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: Get a specific node group from a cluster
+      tags:
+      - Cluster
+  /v1/clusters/{clusterName}/nodegroups/:
+    get:
+      consumes:
+      - application/json
+      description: List all node groups of a specific cluster with each Node Group
+        information
+      parameters:
+      - description: Cluster Name
+        in: path
+        name: clusterName
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/v1.NodeGroupList'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/error.ClientErrorResponse'
+      security:
+      - BasicAuth: []
+      summary: List node groups from a cluster
+      tags:
+      - Cluster
+securityDefinitions:
+  BasicAuth:
+    type: basic
+swagger: "2.0"
