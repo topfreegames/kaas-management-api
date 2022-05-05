@@ -13,7 +13,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// NodeGroupByClusterHandler Shows the information about a node group of a cluster
+// NodeGroupByClusterHandler godoc
+// @Summary      Get a specific node group from a cluster
+// @Description  Shows the information about a node group of a cluster
+// @Tags         Cluster
+// @Accept       json
+// @Produce      json
+// @Param        clusterName   path      string  true  "Cluster Name"
+// @Param        nodeGroupName   path      string  true  "Node Group Name"
+// @Success      200  {object}  nodegroupv1.NodeGroup
+// @Failure      404  {object}  error.ClientErrorResponse
+// @Failure      500  {object}  error.ClientErrorResponse
+// @Router       /v1/clusters/{clusterName}/nodegroup/{nodeGroupName}/ [get]
+// @Security BasicAuth
 func (controller ControllerConfig) NodeGroupByClusterHandler(c *gin.Context) {
 	clusterName := c.Param(clusterv1.ClusterNameParameter)
 	nodeGroupName := c.Param(nodegroupv1.NodeGroupNameParameter)
@@ -77,7 +89,17 @@ func (controller ControllerConfig) NodeGroupByClusterHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, nodeGroupV1)
 }
 
-// NodeGroupListByClusterHandler List all node groups of a specific cluster with each Node Group information
+// NodeGroupListByClusterHandler godoc
+// @Summary      List node groups from a cluster
+// @Description  List all node groups of a specific cluster with each Node Group information
+// @Tags         Cluster
+// @Accept       json
+// @Produce      json
+// @Param        clusterName   path      string  true  "Cluster Name"
+// @Success      200  {object}  nodegroupv1.NodeGroupList
+// @Failure      500  {object}  error.ClientErrorResponse
+// @Router       /v1/clusters/{clusterName}/nodegroups/ [get]
+// @Security BasicAuth
 func (controller ControllerConfig) NodeGroupListByClusterHandler(c *gin.Context) {
 	clusterName := c.Param(clusterv1.ClusterNameParameter)
 

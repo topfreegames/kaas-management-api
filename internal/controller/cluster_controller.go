@@ -13,7 +13,18 @@ import (
 	v1 "github.com/topfreegames/kaas-management-api/api/cluster/v1"
 )
 
-// ClusterHandler - returns a cluster information
+// ClusterHandler godoc
+// @Summary      Get a cluster
+// @Description  Get cluster by the full name and show its configuration
+// @Tags         Cluster
+// @Accept       json
+// @Produce      json
+// @Param        clusterName   path      string  true  "Cluster Name"
+// @Success      200  {object}  v1.Cluster
+// @Failure      404  {object}  error.ClientErrorResponse
+// @Failure      500  {object}  error.ClientErrorResponse
+// @Router       /v1/clusters/{clusterName}/ [get]
+// @Security BasicAuth
 func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
 	clusterName := c.Param(v1.ClusterNameParameter)
 
@@ -72,7 +83,17 @@ func (controller ControllerConfig) ClusterHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, cluster)
 }
 
-// ClusterListHandler - returns a list of clusters with their information
+// ClusterListHandler godoc
+// @Summary      List clusters
+// @Description  Return a list of clusters with their information
+// @Tags         Cluster
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  v1.ClusterList
+// @Failure      404  {object}  error.ClientErrorResponse
+// @Failure      500  {object}  error.ClientErrorResponse
+// @Router       /v1/clusters/ [get]
+// @Security BasicAuth
 func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 	var clusterList v1.ClusterList
 

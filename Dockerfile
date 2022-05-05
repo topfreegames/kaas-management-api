@@ -9,8 +9,10 @@ RUN make build
 
 FROM alpine
 
-COPY --from=builder /kaas/build/manager /bin/kaas-manager
+WORKDIR /app
+COPY --from=builder /kaas/build/manager /app/kaas-manager
+COPY --from=builder /kaas/docs  /app/docs
 
 EXPOSE 8080
 
-ENTRYPOINT [ "/bin/kaas-manager" ]
+ENTRYPOINT [ "/app/kaas-manager" ]
