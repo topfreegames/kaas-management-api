@@ -2,7 +2,7 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/gin-gonic/gin"
 	apiError "github.com/topfreegames/kaas-management-api/api/error"
 	nodegroupv1 "github.com/topfreegames/kaas-management-api/api/nodeGroup/v1"
 	"github.com/topfreegames/kaas-management-api/internal/k8s"
@@ -42,7 +42,7 @@ func Test_NodeGroupByClusterHandler_Success(t *testing.T) {
 			Request: &test.HTTPTestRequest{
 				Method: "GET",
 				Body:   nil,
-				Path:   clusterv1.Endpoint.EndpointPath + "/test-cluster.cluster.example.com/nodegroups/nodes",
+				Path:   clusterv1.Endpoint.Path + "test-cluster.cluster.example.com/nodegroups/nodes/",
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
@@ -58,8 +58,8 @@ func Test_NodeGroupByClusterHandler_Success(t *testing.T) {
 		},
 	}
 	controller := ConfigureControllers(k)
-	endpoint := test.SetupEndpointRouter(clusterv1.Endpoint)
-	endpoint.CreateRoute(http.MethodGet, fmt.Sprintf(":%s/nodegroups/:%s", clusterv1.ClusterNameParameter, nodegroupv1.NodeGroupNameParameter), controller.NodeGroupByClusterHandler)
+	router := gin.Default()
+	router.Handle(http.MethodGet, clusterv1.Endpoint.Path+test.Param(clusterv1.ClusterNameParameter)+test.Path(nodegroupv1.Endpoint.EndpointName)+test.Param(nodegroupv1.NodeGroupNameParameter), controller.NodeGroupByClusterHandler)
 
 	for _, testCase := range testCases {
 		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
@@ -71,7 +71,7 @@ func Test_NodeGroupByClusterHandler_Success(t *testing.T) {
 		}
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			w := request.RunHTTPTest(endpoint.Router)
+			w := request.RunHTTPTest(router)
 			assert.Equal(t, expectedResponse.ExpectedCode, w.Code)
 			expected, err := json.Marshal(expectedResponse.ExpectedBody)
 			assert.Nil(t, err)
@@ -93,7 +93,7 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			Request: &test.HTTPTestRequest{
 				Method: http.MethodGet,
 				Body:   nil,
-				Path:   clusterv1.Endpoint.EndpointPath + "/test-cluster.cluster.example.com/nodegroups/non-existent",
+				Path:   clusterv1.Endpoint.Path + "test-cluster.cluster.example.com/nodegroups/non-existent/",
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
@@ -110,7 +110,7 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			Request: &test.HTTPTestRequest{
 				Method: http.MethodGet,
 				Body:   nil,
-				Path:   clusterv1.Endpoint.EndpointPath + "/non-existent-cluster/nodegroups/nodes",
+				Path:   clusterv1.Endpoint.Path + "non-existent-cluster/nodegroups/nodes/",
 			},
 			K8sTestResources: []runtime.Object{},
 		},
@@ -125,7 +125,7 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			Request: &test.HTTPTestRequest{
 				Method: http.MethodGet,
 				Body:   nil,
-				Path:   clusterv1.Endpoint.EndpointPath + "/test-cluster.cluster.example.com/nodegroups/nodes",
+				Path:   clusterv1.Endpoint.Path + "test-cluster.cluster.example.com/nodegroups/nodes/",
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
@@ -143,7 +143,7 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			Request: &test.HTTPTestRequest{
 				Method: http.MethodGet,
 				Body:   nil,
-				Path:   clusterv1.Endpoint.EndpointPath + "/test-cluster.cluster.example.com/nodegroups/nodes",
+				Path:   clusterv1.Endpoint.Path + "test-cluster.cluster.example.com/nodegroups/nodes/",
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
@@ -158,15 +158,16 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 		},
 	}
 	controller := ConfigureControllers(k)
-	endpoint := test.SetupEndpointRouter(clusterv1.Endpoint)
-	endpoint.CreateRoute(http.MethodGet, fmt.Sprintf(":%s/nodegroups/:%s", clusterv1.ClusterNameParameter, nodegroupv1.NodeGroupNameParameter), controller.NodeGroupByClusterHandler)
+
+	router := gin.Default()
+	router.Handle(http.MethodGet, clusterv1.Endpoint.Path+test.Param(clusterv1.ClusterNameParameter)+test.Path(nodegroupv1.Endpoint.EndpointName)+test.Param(nodegroupv1.NodeGroupNameParameter), controller.NodeGroupByClusterHandler)
 
 	for _, testCase := range testCases {
 		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 		request := testCase.GetHTTPRequest()
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			w := request.RunHTTPTest(endpoint.Router)
+			w := request.RunHTTPTest(router)
 			assert.Equal(t, testCase.ExpectedHTTPError.HttpCode, w.Code)
 			expected, err := json.Marshal(testCase.ExpectedHTTPError)
 			assert.Nil(t, err)
@@ -204,7 +205,7 @@ func Test_NodeGroupListByClusterHandler_Success(t *testing.T) {
 			Request: &test.HTTPTestRequest{
 				Method: http.MethodGet,
 				Body:   nil,
-				Path:   clusterv1.Endpoint.EndpointPath + "/test-cluster.cluster.example.com/nodegroups",
+				Path:   clusterv1.Endpoint.Path + "test-cluster.cluster.example.com/nodegroups/",
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
@@ -253,7 +254,7 @@ func Test_NodeGroupListByClusterHandler_Success(t *testing.T) {
 			Request: &test.HTTPTestRequest{
 				Method: http.MethodGet,
 				Body:   nil,
-				Path:   clusterv1.Endpoint.EndpointPath + "/test-cluster2.cluster.example.com/nodegroups",
+				Path:   clusterv1.Endpoint.Path + "test-cluster2.cluster.example.com/nodegroups/",
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster2.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
@@ -270,8 +271,8 @@ func Test_NodeGroupListByClusterHandler_Success(t *testing.T) {
 		},
 	}
 	controller := ConfigureControllers(k)
-	endpoint := test.SetupEndpointRouter(clusterv1.Endpoint)
-	endpoint.CreateRoute(http.MethodGet, fmt.Sprintf("/:%s/nodegroups", clusterv1.ClusterNameParameter), controller.NodeGroupListByClusterHandler)
+	router := gin.Default()
+	router.Handle(http.MethodGet, clusterv1.Endpoint.Path+test.Param(clusterv1.ClusterNameParameter)+test.Path(nodegroupv1.Endpoint.EndpointName), controller.NodeGroupListByClusterHandler)
 
 	for _, testCase := range testCases {
 		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
@@ -283,7 +284,7 @@ func Test_NodeGroupListByClusterHandler_Success(t *testing.T) {
 		}
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			w := request.RunHTTPTest(endpoint.Router)
+			w := request.RunHTTPTest(router)
 			assert.Equal(t, expectedResponse.ExpectedCode, w.Code)
 			expected, err := json.Marshal(expectedResponse.ExpectedBody)
 			assert.Nil(t, err)
@@ -305,7 +306,7 @@ func Test_NodeGroupListByClusterHandler_ErrorEmptyResponse(t *testing.T) {
 			Request: &test.HTTPTestRequest{
 				Method: http.MethodGet,
 				Body:   nil,
-				Path:   clusterv1.Endpoint.EndpointPath + "/test-cluster.cluster.example.com/nodegroups",
+				Path:   clusterv1.Endpoint.Path + "test-cluster.cluster.example.com/nodegroups/",
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster2.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
@@ -325,7 +326,7 @@ func Test_NodeGroupListByClusterHandler_ErrorEmptyResponse(t *testing.T) {
 			Request: &test.HTTPTestRequest{
 				Method: http.MethodGet,
 				Body:   nil,
-				Path:   clusterv1.Endpoint.EndpointPath + "/test-cluster3.cluster.example.com/nodegroups",
+				Path:   clusterv1.Endpoint.Path + "test-cluster3.cluster.example.com/nodegroups/",
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestCluster("test-cluster3.cluster.example.com", "testcluster-kops-cp", "KopsControlPlane", "controlplane.cluster.x-k8s.io/v1alpha1", "kops-cluster", "KopsAWSCluster", "controlplane.cluster.x-k8s.io/v1alpha1"),
@@ -344,15 +345,15 @@ func Test_NodeGroupListByClusterHandler_ErrorEmptyResponse(t *testing.T) {
 	}
 
 	controller := ConfigureControllers(k)
-	endpoint := test.SetupEndpointRouter(clusterv1.Endpoint)
-	endpoint.CreateRoute(http.MethodGet, fmt.Sprintf("/:%s/nodegroups", clusterv1.ClusterNameParameter), controller.NodeGroupListByClusterHandler)
+	router := gin.Default()
+	router.Handle(http.MethodGet, clusterv1.Endpoint.Path+test.Param(clusterv1.ClusterNameParameter)+test.Path(nodegroupv1.Endpoint.EndpointName), controller.NodeGroupListByClusterHandler)
 
 	for _, testCase := range testCases {
 		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 		request := testCase.GetHTTPRequest()
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			w := request.RunHTTPTest(endpoint.Router)
+			w := request.RunHTTPTest(router)
 			assert.Equal(t, testCase.ExpectedHTTPError.HttpCode, w.Code)
 			expected, err := json.Marshal(testCase.ExpectedHTTPError)
 			assert.Nil(t, err)
