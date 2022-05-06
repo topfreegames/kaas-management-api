@@ -1,6 +1,6 @@
 FROM golang:alpine as builder
 
-RUN apk add --no-cache make
+RUN apk add --no-cache make git
 
 COPY . /kaas
 WORKDIR /kaas
