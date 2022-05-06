@@ -10,13 +10,13 @@ func Test_NewApiEndpoint_Success(t *testing.T) {
 	testCase := map[string]interface{}{
 		"Name": "NewApiEndpoint should create a new ApiEndpoint object",
 		"ExpectedSuccess": &ApiEndpoint{
-			version:      "v9",
-			endpoint:     "myendpoint",
-			EndpointPath: "/v9/myendpoint",
+			Version:      "v9",
+			EndpointName: "myendpoint",
+			Path:         "/v9/myendpoint/",
 		},
 		"Request": map[string]string{
-			"version":  "v9",
-			"endpoint": "myendpoint",
+			"Version":          "v9",
+			"EndpointNamePath": "myendpoint",
 		},
 	}
 
@@ -24,7 +24,7 @@ func Test_NewApiEndpoint_Success(t *testing.T) {
 	expected, _ := testCase["ExpectedSuccess"].(*ApiEndpoint)
 
 	t.Run(testCase["Name"].(string), func(t *testing.T) {
-		endpoint := NewApiEndpoint(request["version"], request["endpoint"])
+		endpoint := NewApiEndpoint(request["Version"], request["EndpointNamePath"])
 		assert.Assert(t, reflect.DeepEqual(expected, endpoint))
 
 	})

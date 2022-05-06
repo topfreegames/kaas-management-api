@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"testing"
@@ -24,12 +25,12 @@ func TestHealthCheckHandler(t *testing.T) {
 		Request: &test.HTTPTestRequest{
 			Method: http.MethodGet,
 			Body:   nil,
-			Path:   healthCheckv1.Endpoint.EndpointPath + "/",
+			Path:   healthCheckv1.Endpoint.Path,
 		},
 	}
 
-	endpoint := test.SetupEndpointRouter(healthCheckv1.Endpoint)
-	endpoint.CreateRoute(http.MethodGet, "/", HealthCheckHandler)
+	router := gin.Default()
+	router.Handle(http.MethodGet, healthCheckv1.Endpoint.Path, HealthCheckHandler)
 
 	request := testCase.GetHTTPRequest()
 	expectedResponse, ok := testCase.ExpectedSuccess.(test.HTTPTestExpectedResponse)
@@ -39,7 +40,7 @@ func TestHealthCheckHandler(t *testing.T) {
 
 	t.Run(testCase.Name, func(t *testing.T) {
 
-		w := request.RunHTTPTest(endpoint.Router)
+		w := request.RunHTTPTest(router)
 
 		assert.Equal(t, expectedResponse.ExpectedCode, w.Code)
 		expected, err := json.Marshal(expectedResponse.ExpectedBody)

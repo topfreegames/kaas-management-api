@@ -16,6 +16,16 @@ type RouterConfig struct {
 	router     *gin.Engine
 }
 
+// path returns a path with trailing slash
+func path(path string) string {
+	return path + "/"
+}
+
+// param returns a path parameter in the gin notation as string
+func param(param string) string {
+	return ":" + param + "/"
+}
+
 func (r RouterConfig) setupRoutes() {
 	r.setupClusterV1Routes()
 	r.setupHealthCheckRoutes()
@@ -23,16 +33,14 @@ func (r RouterConfig) setupRoutes() {
 }
 
 func (r RouterConfig) setupClusterV1Routes() {
-	clusterv1.Endpoint.CreatePrivateRouterGroup(r.router)
-	clusterv1.Endpoint.CreateRoute(http.MethodGet, "/", r.controller.ClusterListHandler)
-	clusterv1.Endpoint.CreateRoute(http.MethodGet, "/:"+clusterv1.ClusterNameParameter, r.controller.ClusterHandler)
-	clusterv1.Endpoint.CreateRoute(http.MethodGet, "/:"+clusterv1.ClusterNameParameter+"/nodegroups", r.controller.NodeGroupListByClusterHandler)
-	clusterv1.Endpoint.CreateRoute(http.MethodGet, "/:"+clusterv1.ClusterNameParameter+"/nodegroups"+"/:"+nodegroupv1.NodeGroupNameParameter, r.controller.NodeGroupByClusterHandler)
+	r.router.Handle(http.MethodGet, clusterv1.Endpoint.Path, r.controller.ClusterListHandler)
+	r.router.Handle(http.MethodGet, clusterv1.Endpoint.Path+param(clusterv1.ClusterNameParameter), r.controller.ClusterHandler)
+	r.router.Handle(http.MethodGet, clusterv1.Endpoint.Path+param(clusterv1.ClusterNameParameter)+path(nodegroupv1.Endpoint.EndpointName), r.controller.NodeGroupListByClusterHandler)
+	r.router.Handle(http.MethodGet, clusterv1.Endpoint.Path+param(clusterv1.ClusterNameParameter)+path(nodegroupv1.Endpoint.EndpointName)+param(nodegroupv1.NodeGroupNameParameter), r.controller.NodeGroupByClusterHandler)
 }
 
 func (r RouterConfig) setupHealthCheckRoutes() {
-	healthCheck.Endpoint.CreatePublicRouterGroup(r.router)
-	healthCheck.Endpoint.CreateRoute(http.MethodGet, "/", controller.HealthCheckHandler)
+	r.router.Handle(http.MethodGet, healthCheck.Endpoint.Path, controller.HealthCheckHandler)
 }
 
 func (r RouterConfig) setupDocsRoutes() {
