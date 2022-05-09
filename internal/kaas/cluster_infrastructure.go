@@ -1,4 +1,4 @@
-package k8s
+package kaas
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ type ClusterInfrastructure struct {
 }
 
 // GetClusterInfrastructure returns a cluster infrastructure resource in a generic format using the ClusterInfrastructure struct
-func (k Kubernetes) GetClusterInfrastructure(infrastructureKind string) (*ClusterInfrastructure, error) {
+func GetClusterInfrastructure(infrastructureKind string) (*ClusterInfrastructure, error) {
 	var infrastructure *ClusterInfrastructure
 
 	switch infrastructureKind {

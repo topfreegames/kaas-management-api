@@ -18,7 +18,7 @@ func Authenticate() *Auth {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Printf("Could not retrieve pod service Account configuration: %v", err)
-		log.Print("Using local authentication")
+		log.Print("Trying local authentication")
 		return LocalAuthenticate()
 	}
 
@@ -27,6 +27,7 @@ func Authenticate() *Auth {
 		log.Fatalf("Could not create client as a pod: %v", err)
 	}
 
+	log.Print("Using local authentication")
 	return &Auth{
 		AuthConfig:    config,
 		DynamicClient: client,

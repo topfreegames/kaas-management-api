@@ -118,8 +118,8 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			Name:            "Error getting nodeGroup without infrastructure in clusterV1 endpoint should return invalid resource",
 			ExpectedSuccess: nil,
 			ExpectedHTTPError: &apiError.ClientErrorResponse{
-				ErrorMessage: "Nodegroup configuration is invalid",
-				ErrorType:    clientError.InvalidConfiguration,
+				ErrorMessage: "Nodegroup resource is invalid",
+				ErrorType:    clientError.InvalidResource,
 				HttpCode:     http.StatusInternalServerError,
 			},
 			Request: &test.HTTPTestRequest{
@@ -133,7 +133,7 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			},
 		},
 		{
-			Name:            "Error getting nodeGroup with invalid infrastructure kind in clusterV1 endpoint should return invalid resource",
+			Name:            "Error getting nodeGroup with invalid infrastructure kind in clusterV1 endpoint should return invalid configuration",
 			ExpectedSuccess: nil,
 			ExpectedHTTPError: &apiError.ClientErrorResponse{
 				ErrorMessage: "Nodegroup configuration is invalid",

@@ -1,17 +1,37 @@
-package k8s
+package kaas
 
 import (
+	"github.com/topfreegames/kaas-management-api/internal/k8s"
 	"github.com/topfreegames/kaas-management-api/test"
 	"github.com/topfreegames/kaas-management-api/util/clientError"
 	"gotest.tools/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"log"
 	"reflect"
-	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	clusterapiexpv1beta1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
 	"testing"
 )
+
+var TestKopsInfrastructure NodeInfrastructure = NodeInfrastructure{
+	Name:        "TestMachinePool",
+	Cluster:     "TestCluster1",
+	Provider:    "Kops",
+	Az:          []string{"us-east-1a"},
+	MachineType: "m5.xlarge",
+	Min:         nil,
+	Max:         nil,
+	Spec:        nil,
+}
+
+var TestDockerInfrastructure NodeInfrastructure = NodeInfrastructure{
+	Name:     "docker",
+	Provider: "docker",
+	Cluster:  "docker-cluster",
+	Az: []string{
+		"local",
+	},
+	MachineType: "container",
+	Spec:        nil,
+}
 
 func Test_GetNodeGroup_Success(t *testing.T) {
 	testCases := []test.TestCase{
@@ -22,6 +42,7 @@ func Test_GetNodeGroup_Success(t *testing.T) {
 				Cluster:            "TestCluster1",
 				InfrastructureName: "TestKopsMachinePool",
 				InfrastructureKind: "KopsMachinePool",
+				Infrastructure:     nil,
 				Replicas:           nil,
 			},
 			ExpectedClientError: nil,
@@ -32,6 +53,7 @@ func Test_GetNodeGroup_Success(t *testing.T) {
 			K8sTestResources: []runtime.Object{
 				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 				test.NewTestMachineDeployment("TestCluster2-TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+				test.NewTestKopsMachinePool("TestKopsMachinePool", "TestCluster1"),
 			},
 		},
 		{
@@ -41,6 +63,7 @@ func Test_GetNodeGroup_Success(t *testing.T) {
 				Cluster:            "TestCluster2",
 				InfrastructureName: "TestDockerMachineTemplate",
 				InfrastructureKind: "DockerMachineTemplate",
+				Infrastructure:     nil,
 				Replicas:           nil,
 			},
 			ExpectedClientError: nil,
@@ -56,7 +79,7 @@ func Test_GetNodeGroup_Success(t *testing.T) {
 	}
 
 	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
+	k := &k8s.Kubernetes{K8sAuth: &k8s.Auth{
 		DynamicClient: fakeClient,
 	}}
 
@@ -69,7 +92,8 @@ func Test_GetNodeGroup_Success(t *testing.T) {
 		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			response, err := k.GetNodeGroup(request.Cluster, request.ResourceName)
+			response, err := GetNodeGroup(k, request.Cluster, request.ResourceName)
+			response.Infrastructure = nil
 			assert.NilError(t, err)
 			assert.Assert(t, reflect.DeepEqual(expectedInfra, response))
 		})
@@ -131,7 +155,7 @@ func Test_GetNodeGroup_Error(t *testing.T) {
 	}
 
 	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
+	k := &k8s.Kubernetes{K8sAuth: &k8s.Auth{
 		DynamicClient: fakeClient,
 	}}
 
@@ -140,7 +164,7 @@ func Test_GetNodeGroup_Error(t *testing.T) {
 		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			_, err := k.GetNodeGroup(request.Cluster, request.ResourceName)
+			_, err := GetNodeGroup(k, request.Cluster, request.ResourceName)
 			assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
 			assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 		})
@@ -150,13 +174,14 @@ func Test_GetNodeGroup_Error(t *testing.T) {
 func Test_ListNodeGroup_Success(t *testing.T) {
 	testCases := []test.TestCase{
 		{
-			Name: "ListNodeGroup should return Success for MachinePool",
-			ExpectedSuccess: []NodeGroup{
+			Name: "ListNodeGroups should return Success for MachinePool",
+			ExpectedSuccess: []*NodeGroup{
 				{
 					Name:               "TestMachinePool1",
 					Cluster:            "TestCluster1",
 					InfrastructureName: "TestKopsMachinePool1",
 					InfrastructureKind: "KopsMachinePool",
+					Infrastructure:     nil,
 					Replicas:           nil,
 				},
 				{
@@ -164,6 +189,7 @@ func Test_ListNodeGroup_Success(t *testing.T) {
 					Cluster:            "TestCluster1",
 					InfrastructureName: "TestKopsMachinePool2",
 					InfrastructureKind: "KopsMachinePool",
+					Infrastructure:     nil,
 					Replicas:           nil,
 				},
 			},
@@ -175,16 +201,19 @@ func Test_ListNodeGroup_Success(t *testing.T) {
 				test.NewTestMachinePool("TestMachinePool1", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool1", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 				test.NewTestMachinePool("TestMachinePool2", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool2", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+				test.NewTestKopsMachinePool("TestKopsMachinePool1", "TestCluster1"),
+				test.NewTestKopsMachinePool("TestKopsMachinePool2", "TestCluster1"),
 			},
 		},
 		{
-			Name: "ListNodeGroup should return Success for MachineDeployment",
-			ExpectedSuccess: []NodeGroup{
+			Name: "ListNodeGroups should return Success for MachineDeployment",
+			ExpectedSuccess: []*NodeGroup{
 				{
 					Name:               "TestMachineDeployment1",
 					Cluster:            "TestCluster2",
 					InfrastructureName: "TestDockerMachineTemplate1",
 					InfrastructureKind: "DockerMachineTemplate",
+					Infrastructure:     nil,
 					Replicas:           nil,
 				},
 				{
@@ -192,6 +221,7 @@ func Test_ListNodeGroup_Success(t *testing.T) {
 					Cluster:            "TestCluster2",
 					InfrastructureName: "TestDockerMachineTemplate2",
 					InfrastructureKind: "DockerMachineTemplate",
+					Infrastructure:     nil,
 					Replicas:           nil,
 				},
 			},
@@ -203,26 +233,33 @@ func Test_ListNodeGroup_Success(t *testing.T) {
 				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 				test.NewTestMachineDeployment("TestMachineDeployment1", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate1", "infrastructure.cluster.x-k8s.io/v1beta1"),
 				test.NewTestMachineDeployment("TestMachineDeployment2", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate2", "infrastructure.cluster.x-k8s.io/v1beta1"),
+				test.NewTestKopsMachinePool("TestKopsMachinePool", "TestCluster1"),
 			},
 		},
 	}
 
 	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
+	k := &k8s.Kubernetes{K8sAuth: &k8s.Auth{
 		DynamicClient: fakeClient,
 	}}
 
 	for _, testCase := range testCases {
 		request := testCase.GetK8sRequest()
-		expectedInfra, ok := testCase.ExpectedSuccess.([]NodeGroup)
+		expectedInfra, ok := testCase.ExpectedSuccess.([]*NodeGroup)
 		if !ok {
-			log.Fatalf("Failed converting Success struct from test \"%s\" to []NodeGroup", testCase.Name)
+			log.Fatalf("Failed converting Success struct from test \"%s\" to []*NodeGroup", testCase.Name)
 		}
 		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			response, err := k.ListNodeGroup(request.Cluster)
+			response, err := ListNodeGroups(k, request.Cluster)
+			for _, ng := range response {
+				ng.Infrastructure = nil
+			}
+			lenExpected := len(expectedInfra)
+			lenResponse := len(response)
 			assert.NilError(t, err)
+			assert.Equal(t, lenExpected, lenResponse)
 			assert.Assert(t, reflect.DeepEqual(expectedInfra, response))
 		})
 	}
@@ -231,7 +268,7 @@ func Test_ListNodeGroup_Success(t *testing.T) {
 func Test_ListNodeGroup_Error(t *testing.T) {
 	testCases := []test.TestCase{
 		{
-			Name:            "ListNodeGroup should return Error for non-existent resources in cluster",
+			Name:            "ListNodeGroups should return Error for non-existent resources in cluster",
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
@@ -248,7 +285,7 @@ func Test_ListNodeGroup_Error(t *testing.T) {
 			},
 		},
 		{
-			Name:            "ListNodeGroup should return Error for non-existent cluster",
+			Name:            "ListNodeGroups should return Error for non-existent cluster",
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
@@ -264,7 +301,7 @@ func Test_ListNodeGroup_Error(t *testing.T) {
 			},
 		},
 		{
-			Name:            "ListNodeGroup should return EmptyResponse for nodegroup without infrastructure",
+			Name:            "ListNodeGroups should return EmptyResponse for nodegroup without infrastructure",
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
@@ -282,7 +319,7 @@ func Test_ListNodeGroup_Error(t *testing.T) {
 	}
 
 	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
+	k := &k8s.Kubernetes{K8sAuth: &k8s.Auth{
 		DynamicClient: fakeClient,
 	}}
 
@@ -291,18 +328,25 @@ func Test_ListNodeGroup_Error(t *testing.T) {
 		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			_, err := k.ListNodeGroup(request.Cluster)
+			_, err := ListNodeGroups(k, request.Cluster)
 			assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
 			assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 		})
 	}
 }
 
-func Test_GetMachinePool_Success(t *testing.T) {
+func Test_GetNodeGroupConfig_Success(t *testing.T) {
 	testCases := []test.TestCase{
 		{
-			Name:                "GetMachinePool should return Success for MachinePool",
-			ExpectedSuccess:     test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+			Name: "GetNodeGroupConfig should return Success for MachinePool",
+			ExpectedSuccess: &NodeGroup{
+				Name:               "TestMachinePool",
+				Cluster:            "TestCluster1",
+				InfrastructureName: "TestKopsMachinePool",
+				InfrastructureKind: "KopsMachinePool",
+				Infrastructure:     nil,
+				Replicas:           nil,
+			},
 			ExpectedClientError: nil,
 			Request: &test.K8sRequest{
 				ResourceName: "TestMachinePool",
@@ -310,40 +354,64 @@ func Test_GetMachinePool_Success(t *testing.T) {
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachinePool("TestCluster1-TestMachinePool2", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("TestCluster2-TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+			},
+		},
+		{
+			Name: "GetNodeGroupConfig should return Success for MachineDeployment",
+			ExpectedSuccess: &NodeGroup{
+				Name:               "TestMachineDeployment",
+				Cluster:            "TestCluster2",
+				InfrastructureName: "TestDockerMachineTemplate",
+				InfrastructureKind: "DockerMachineTemplate",
+				Infrastructure:     nil,
+				Replicas:           nil,
+			},
+			ExpectedClientError: nil,
+			Request: &test.K8sRequest{
+				ResourceName: "TestMachineDeployment",
+				Cluster:      "TestCluster2",
+			},
+			K8sTestResources: []runtime.Object{
+				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("TestCluster2-TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
 			},
 		},
 	}
 
 	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
+	k := &k8s.Kubernetes{K8sAuth: &k8s.Auth{
 		DynamicClient: fakeClient,
 	}}
 
 	for _, testCase := range testCases {
 		request := testCase.GetK8sRequest()
-		expectedInfra, ok := testCase.ExpectedSuccess.(*clusterapiexpv1beta1.MachinePool)
+		expectedInfra, ok := testCase.ExpectedSuccess.(*NodeGroup)
 		if !ok {
-			log.Fatalf("Failed converting Success struct from test \"%s\" to *v1beta1.MachinePool", testCase.Name)
+			log.Fatalf("Failed converting Success struct from test \"%s\" to *NodeGroup", testCase.Name)
 		}
 		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			response, err := k.GetMachinePool(request.Cluster, request.ResourceName)
+			ng := &NodeGroup{
+				Name:    request.ResourceName,
+				Cluster: request.Cluster,
+			}
+			err := ng.getNodeGroupConfig(k)
 			assert.NilError(t, err)
-			assert.Assert(t, reflect.DeepEqual(expectedInfra, response))
+			assert.Assert(t, reflect.DeepEqual(expectedInfra, ng))
 		})
 	}
 }
 
-func Test_GetMachinePool_Error(t *testing.T) {
+func Test_GetNodeGroupConfig_Error(t *testing.T) {
 	testCases := []test.TestCase{
 		{
-			Name:            "GetMachinepool should return Error for non-existent resource",
+			Name:            "GetNodeGroupConfig should return Error for non-existent resource",
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "The requested machinepool nonexistent was not found for the cluster TestCluster1!",
+				ErrorDetailedMessage: "Could not find the NodeGroup nonexistent in the cluster TestCluster1",
 				ErrorMessage:         clientError.ResourceNotFound,
 			},
 			Request: &test.K8sRequest{
@@ -351,15 +419,16 @@ func Test_GetMachinePool_Error(t *testing.T) {
 				Cluster:      "TestCluster1",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
 			},
 		},
 		{
-			Name:            "GetMachinepool should return Error for non-existent cluster",
+			Name:            "GetNodeGroupConfig should return Error for non-existent cluster",
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "The requested machinepool TestMachinePool was not found for the cluster TestCluster3!",
+				ErrorDetailedMessage: "Could not find the NodeGroup TestMachinePool in the cluster TestCluster3",
 				ErrorMessage:         clientError.ResourceNotFound,
 			},
 			Request: &test.K8sRequest{
@@ -368,14 +437,15 @@ func Test_GetMachinePool_Error(t *testing.T) {
 			},
 			K8sTestResources: []runtime.Object{
 				test.NewTestMachinePool("TestCluster1-TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("TestCluster2-TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
 			},
 		},
 		{
-			Name:            "GetMachinepool should return Error for a machinePool without infrastructure",
+			Name:            "GetNodeGroupConfig should return Error for node without infrastructure",
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "MachinePool TestCluster1-TestMachinePool doesn't have a valid configuration",
+				ErrorDetailedMessage: "MachinePool TestMachinePool configuration is invalid",
 				ErrorMessage:         clientError.InvalidConfiguration,
 			},
 			Request: &test.K8sRequest{
@@ -389,7 +459,7 @@ func Test_GetMachinePool_Error(t *testing.T) {
 	}
 
 	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
+	k := &k8s.Kubernetes{K8sAuth: &k8s.Auth{
 		DynamicClient: fakeClient,
 	}}
 
@@ -398,26 +468,37 @@ func Test_GetMachinePool_Error(t *testing.T) {
 		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			_, err := k.GetMachinePool(request.Cluster, request.ResourceName)
+			ng := &NodeGroup{
+				Name:    request.ResourceName,
+				Cluster: request.Cluster,
+			}
+			err := ng.getNodeGroupConfig(k)
 			assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
 			assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 		})
 	}
 }
 
-func Test_ListMachinePool_Success(t *testing.T) {
+func Test_GetNodeGroupListConfig_Success(t *testing.T) {
 	testCases := []test.TestCase{
 		{
-			Name: "ListMachinePool should return Success for two MachinePools",
-			ExpectedSuccess: &clusterapiexpv1beta1.MachinePoolList{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "MachinePoolList",
-					APIVersion: "cluster.x-k8s.io/v1beta1",
+			Name: "GetNodeGroupListConfig should return Success for MachinePool",
+			ExpectedSuccess: []*NodeGroup{
+				{
+					Name:               "TestMachinePool1",
+					Cluster:            "TestCluster1",
+					InfrastructureName: "TestKopsMachinePool1",
+					InfrastructureKind: "KopsMachinePool",
+					Infrastructure:     nil,
+					Replicas:           nil,
 				},
-				ListMeta: metav1.ListMeta{},
-				Items: []clusterapiexpv1beta1.MachinePool{
-					*test.NewTestMachinePool("TestMachinePool1", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool1", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-					*test.NewTestMachinePool("TestMachinePool2", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool2", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				{
+					Name:               "TestMachinePool2",
+					Cluster:            "TestCluster1",
+					InfrastructureName: "TestKopsMachinePool2",
+					InfrastructureKind: "KopsMachinePool",
+					Infrastructure:     nil,
+					Replicas:           nil,
 				},
 			},
 			ExpectedClientError: nil,
@@ -427,18 +508,27 @@ func Test_ListMachinePool_Success(t *testing.T) {
 			K8sTestResources: []runtime.Object{
 				test.NewTestMachinePool("TestMachinePool1", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool1", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 				test.NewTestMachinePool("TestMachinePool2", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool2", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
 			},
 		},
 		{
-			Name: "ListMachinePool should return Success for one MachinePool",
-			ExpectedSuccess: &clusterapiexpv1beta1.MachinePoolList{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "MachinePoolList",
-					APIVersion: "cluster.x-k8s.io/v1beta1",
+			Name: "GetNodeGroupListConfig should return Success for MachineDeployment",
+			ExpectedSuccess: []*NodeGroup{
+				{
+					Name:               "TestMachineDeployment1",
+					Cluster:            "TestCluster2",
+					InfrastructureName: "TestDockerMachineTemplate1",
+					InfrastructureKind: "DockerMachineTemplate",
+					Infrastructure:     nil,
+					Replicas:           nil,
 				},
-				ListMeta: metav1.ListMeta{},
-				Items: []clusterapiexpv1beta1.MachinePool{
-					*test.NewTestMachinePool("TestMachinePool3", "TestCluster2", "KopsMachinePool", "TestKopsMachinePool1", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				{
+					Name:               "TestMachineDeployment2",
+					Cluster:            "TestCluster2",
+					InfrastructureName: "TestDockerMachineTemplate2",
+					InfrastructureKind: "DockerMachineTemplate",
+					Infrastructure:     nil,
+					Replicas:           nil,
 				},
 			},
 			ExpectedClientError: nil,
@@ -446,297 +536,92 @@ func Test_ListMachinePool_Success(t *testing.T) {
 				Cluster: "TestCluster2",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachinePool("TestMachinePool3", "TestCluster2", "KopsMachinePool", "TestKopsMachinePool1", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("TestMachineDeployment1", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate1", "infrastructure.cluster.x-k8s.io/v1beta1"),
+				test.NewTestMachineDeployment("TestMachineDeployment2", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate2", "infrastructure.cluster.x-k8s.io/v1beta1"),
 			},
 		},
 	}
 
 	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
+	k := &k8s.Kubernetes{K8sAuth: &k8s.Auth{
 		DynamicClient: fakeClient,
 	}}
 
 	for _, testCase := range testCases {
 		request := testCase.GetK8sRequest()
-		expectedInfra, ok := testCase.ExpectedSuccess.(*clusterapiexpv1beta1.MachinePoolList)
+		expectedInfra, ok := testCase.ExpectedSuccess.([]*NodeGroup)
 		if !ok {
-			log.Fatalf("Failed converting Success struct from test \"%s\" to *clusterapiexpv1beta1.MachinePoolList", testCase.Name)
+			log.Fatalf("Failed converting Success struct from test \"%s\" to []*NodeGroup", testCase.Name)
 		}
 		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			response, err := k.ListMachinePool(request.Cluster)
+			response, err := GetNodeGroupListConfig(k, request.Cluster)
+			lenExpected := len(expectedInfra)
+			lenResponse := len(response)
 			assert.NilError(t, err)
+			assert.Equal(t, lenExpected, lenResponse)
 			assert.Assert(t, reflect.DeepEqual(expectedInfra, response))
 		})
 	}
 }
 
-func Test_ListMachinePool_Error(t *testing.T) {
+func Test_GetNodeGroupListConfig_Error(t *testing.T) {
 	testCases := []test.TestCase{
 		{
-			Name:            "ListMachinePool should return Error for non-existent resources in cluster",
+			Name:            "GetNodeGroupListConfig should return Error for non-existent resources in cluster",
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "no Machinepools were found for the cluster TestCluster1!",
+				ErrorDetailedMessage: "No NodeGroups were found in the cluster TestCluster1",
 				ErrorMessage:         clientError.EmptyResponse,
 			},
 			Request: &test.K8sRequest{
 				Cluster: "TestCluster1",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-				test.NewTestMachinePool("TestMachinePool", "TestCluster2", "KopsMachinePool", "TestKopsMachinePool1", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestKopsMachinePool("test", "TestCluster1"),
+				test.NewTestMachinePool("TestMachinePool", "TestCluster2", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
 			},
 		},
 		{
-			Name:            "ListMachinePool should return Error for non-existent cluster",
+			Name:            "GetNodeGroupListConfig should return Error for non-existent cluster",
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "no Machinepools were found for the cluster TestCluster3!",
+				ErrorDetailedMessage: "No NodeGroups were found in the cluster TestCluster3",
 				ErrorMessage:         clientError.EmptyResponse,
 			},
 			Request: &test.K8sRequest{
 				Cluster: "TestCluster3",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachinePool("TestMachinePool", "TestCluster2", "KopsMachinePool", "TestKopsMachinePool1", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
 				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
 			},
 		},
-	}
-
-	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
-		DynamicClient: fakeClient,
-	}}
-
-	for _, testCase := range testCases {
-		request := testCase.GetK8sRequest()
-		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
-
-		t.Run(testCase.Name, func(t *testing.T) {
-			_, err := k.ListMachinePool(request.Cluster)
-			assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
-			assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
-		})
-	}
-}
-
-func Test_GetMachineDeployment_Success(t *testing.T) {
-	testCases := []test.TestCase{
 		{
-			Name:                "GetMachineDeployment should return Success for MachineDeployment",
-			ExpectedSuccess:     test.NewTestMachineDeployment("TestCluster1-TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-			ExpectedClientError: nil,
-			Request: &test.K8sRequest{
-				ResourceName: "TestMachineDeployment",
-				Cluster:      "TestCluster1",
-			},
-			K8sTestResources: []runtime.Object{
-				test.NewTestMachineDeployment("TestCluster1-TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-				test.NewTestMachineDeployment("TestCluster1-TestMachineDeployment2", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-			},
-		},
-	}
-
-	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
-		DynamicClient: fakeClient,
-	}}
-
-	for _, testCase := range testCases {
-		request := testCase.GetK8sRequest()
-		expectedInfra, ok := testCase.ExpectedSuccess.(*clusterapiv1beta1.MachineDeployment)
-		if !ok {
-			log.Fatalf("Failed converting Success struct from test \"%s\" to *clusterapiv1beta1.MachineDeployment", testCase.Name)
-		}
-		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
-
-		t.Run(testCase.Name, func(t *testing.T) {
-			response, err := k.GetMachineDeployment(request.Cluster, request.ResourceName)
-			assert.NilError(t, err)
-			assert.Assert(t, reflect.DeepEqual(expectedInfra, response))
-		})
-	}
-}
-
-func Test_GetMachineDeployment_Error(t *testing.T) {
-	testCases := []test.TestCase{
-		{
-			Name:            "GetMachineDeployment should return Error for non-existent resource",
+			Name:            "ListNodeGroups should return EmptyResponse for nodegroup without infrastructure",
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "The requested machinedeployment nonexistent was not found for the cluster TestCluster1!",
-				ErrorMessage:         clientError.ResourceNotFound,
+				ErrorDetailedMessage: "No valid NodeGroups were found in the cluster TestCluster2, some Nodegroups have invalid configuration",
+				ErrorMessage:         clientError.EmptyResponse,
 			},
-			Request: &test.K8sRequest{
-				ResourceName: "nonexistent",
-				Cluster:      "TestCluster1",
-			},
-			K8sTestResources: []runtime.Object{
-				test.NewTestMachineDeployment("TestCluster1-TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-			},
-		},
-		{
-			Name:            "GetMachinepool should return Error for non-existent cluster",
-			ExpectedSuccess: nil,
-			ExpectedClientError: &clientError.ClientError{
-				ErrorCause:           nil,
-				ErrorDetailedMessage: "The requested machinedeployment TestMachineDeployment was not found for the cluster TestCluster3!",
-				ErrorMessage:         clientError.ResourceNotFound,
-			},
-			Request: &test.K8sRequest{
-				ResourceName: "TestMachineDeployment",
-				Cluster:      "TestCluster3",
-			},
-			K8sTestResources: []runtime.Object{
-				test.NewTestMachineDeployment("TestCluster1-TestMachineDeployment", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-			},
-		},
-		{
-			Name:            "GetMachinepool should return Error for a machinePool without infrastructure",
-			ExpectedSuccess: nil,
-			ExpectedClientError: &clientError.ClientError{
-				ErrorCause:           nil,
-				ErrorDetailedMessage: "MachineDeployment TestCluster1-TestMachineDeployment doesn't have a valid configuration",
-				ErrorMessage:         clientError.InvalidConfiguration,
-			},
-			Request: &test.K8sRequest{
-				ResourceName: "TestMachineDeployment",
-				Cluster:      "TestCluster1",
-			},
-			K8sTestResources: []runtime.Object{
-				test.NewTestMachineDeployment("TestCluster1-TestMachineDeployment", "TestCluster1", "", "", ""),
-			},
-		},
-	}
-
-	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
-		DynamicClient: fakeClient,
-	}}
-
-	for _, testCase := range testCases {
-		request := testCase.GetK8sRequest()
-		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
-
-		t.Run(testCase.Name, func(t *testing.T) {
-			_, err := k.GetMachineDeployment(request.Cluster, request.ResourceName)
-			assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
-			assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
-		})
-	}
-}
-
-func Test_ListMachineDeployment_Success(t *testing.T) {
-	testCases := []test.TestCase{
-		{
-			Name: "ListMachineDeployment should return Success for two MachineDeployments",
-			ExpectedSuccess: &clusterapiv1beta1.MachineDeploymentList{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "MachineDeploymentList",
-					APIVersion: "cluster.x-k8s.io/v1beta1",
-				},
-				ListMeta: metav1.ListMeta{},
-				Items: []clusterapiv1beta1.MachineDeployment{
-					*test.NewTestMachineDeployment("TestMachineDeployment1", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-					*test.NewTestMachineDeployment("TestMachineDeployment2", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-				},
-			},
-			ExpectedClientError: nil,
-			Request: &test.K8sRequest{
-				Cluster: "TestCluster1",
-			},
-			K8sTestResources: []runtime.Object{
-				test.NewTestMachineDeployment("TestMachineDeployment1", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-				test.NewTestMachineDeployment("TestMachineDeployment2", "TestCluster1", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-			},
-		},
-		{
-			Name: "ListMachineDeployment should return Success for one MachineDeployment",
-			ExpectedSuccess: &clusterapiv1beta1.MachineDeploymentList{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "MachineDeploymentList",
-					APIVersion: "cluster.x-k8s.io/v1beta1",
-				},
-				ListMeta: metav1.ListMeta{},
-				Items: []clusterapiv1beta1.MachineDeployment{
-					*test.NewTestMachineDeployment("TestMachineDeployment3", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-				},
-			},
-			ExpectedClientError: nil,
 			Request: &test.K8sRequest{
 				Cluster: "TestCluster2",
 			},
 			K8sTestResources: []runtime.Object{
-				test.NewTestMachineDeployment("TestMachineDeployment3", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
+				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool", "infrastructure.cluster.x-k8s.io/v1alpha1"),
+				test.NewTestMachineDeployment("TestCluster2-TestMachineDeployment", "TestCluster2", "", "", ""),
 			},
 		},
 	}
 
 	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
-		DynamicClient: fakeClient,
-	}}
-
-	for _, testCase := range testCases {
-		request := testCase.GetK8sRequest()
-		expectedInfra, ok := testCase.ExpectedSuccess.(*clusterapiv1beta1.MachineDeploymentList)
-		if !ok {
-			log.Fatalf("Failed converting Success struct from test \"%s\" to *clusterapiv1beta1.MachineDeploymentList", testCase.Name)
-		}
-		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
-
-		t.Run(testCase.Name, func(t *testing.T) {
-			response, err := k.ListMachineDeployment(request.Cluster)
-			assert.NilError(t, err)
-			assert.Assert(t, reflect.DeepEqual(expectedInfra, response))
-		})
-	}
-}
-
-func Test_ListMachineDeployment_Error(t *testing.T) {
-	testCases := []test.TestCase{
-		{
-			Name:            "ListMachineDeployment should return Error for non-existent resources in cluster",
-			ExpectedSuccess: nil,
-			ExpectedClientError: &clientError.ClientError{
-				ErrorCause:           nil,
-				ErrorDetailedMessage: "no Machinedeployments were found for the cluster TestCluster1!",
-				ErrorMessage:         clientError.EmptyResponse,
-			},
-			Request: &test.K8sRequest{
-				Cluster: "TestCluster1",
-			},
-			K8sTestResources: []runtime.Object{
-				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-				test.NewTestMachinePool("TestMachinePool", "TestCluster1", "KopsMachinePool", "TestKopsMachinePool1", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-			},
-		},
-		{
-			Name:            "ListMachineDeployment should return Error for non-existent cluster",
-			ExpectedSuccess: nil,
-			ExpectedClientError: &clientError.ClientError{
-				ErrorCause:           nil,
-				ErrorDetailedMessage: "no Machinedeployments were found for the cluster TestCluster3!",
-				ErrorMessage:         clientError.EmptyResponse,
-			},
-			Request: &test.K8sRequest{
-				Cluster: "TestCluster3",
-			},
-			K8sTestResources: []runtime.Object{
-				test.NewTestMachinePool("TestMachinePool", "TestCluster2", "KopsMachinePool", "TestKopsMachinePool1", "infrastructure.cluster.x-k8s.io/v1alpha1"),
-				test.NewTestMachineDeployment("TestMachineDeployment", "TestCluster2", "DockerMachineTemplate", "TestDockerMachineTemplate", "infrastructure.cluster.x-k8s.io/v1beta1"),
-			},
-		},
-	}
-
-	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
+	k := &k8s.Kubernetes{K8sAuth: &k8s.Auth{
 		DynamicClient: fakeClient,
 	}}
 
@@ -745,39 +630,7 @@ func Test_ListMachineDeployment_Error(t *testing.T) {
 		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			_, err := k.ListMachineDeployment(request.Cluster)
-			assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
-			assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
-		})
-	}
-}
-
-func Test_ValidateMachineTemplateComponents_Error(t *testing.T) {
-	testCases := []test.TestCase{
-		{
-			Name:            "Should return an error for a NodeGroup without infrastructure",
-			ExpectedSuccess: nil,
-			ExpectedClientError: &clientError.ClientError{
-				ErrorCause:           nil,
-				ErrorDetailedMessage: "MachineTemplate doesn't have an infrastructure Reference",
-				ErrorMessage:         clientError.InvalidConfiguration,
-			},
-			K8sTestResources: []runtime.Object{
-				test.NewTestMachinePool("TestMachinePool", "TestCluster2", "", "", ""),
-			},
-		},
-	}
-
-	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
-		DynamicClient: fakeClient,
-	}}
-
-	for _, testCase := range testCases {
-		k.K8sAuth.DynamicClient = test.NewK8sFakeDynamicClientWithResources(testCase.K8sTestResources...)
-		machinePool, _ := testCase.K8sTestResources[0].(*clusterapiexpv1beta1.MachinePool)
-		t.Run(testCase.Name, func(t *testing.T) {
-			err := ValidateMachineTemplateComponents(machinePool.Spec.Template)
+			_, err := GetNodeGroupListConfig(k, request.Cluster)
 			assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
 			assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 		})

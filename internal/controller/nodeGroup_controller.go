@@ -2,15 +2,13 @@ package controller
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	clusterv1 "github.com/topfreegames/kaas-management-api/api/cluster/v1"
 	nodegroupv1 "github.com/topfreegames/kaas-management-api/api/nodeGroup/v1"
-	"github.com/topfreegames/kaas-management-api/internal/k8s"
+	"github.com/topfreegames/kaas-management-api/internal/kaas"
 	"github.com/topfreegames/kaas-management-api/util/clientError"
 	"log"
 	"net/http"
-	clusterapiv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
-
-	"github.com/gin-gonic/gin"
 )
 
 // NodeGroupByClusterHandler godoc
@@ -30,7 +28,7 @@ func (controller ControllerConfig) NodeGroupByClusterHandler(c *gin.Context) {
 	clusterName := c.Param(clusterv1.ClusterNameParameter)
 	nodeGroupName := c.Param(nodegroupv1.NodeGroupNameParameter)
 
-	cluster, err := controller.K8sInstance.GetCluster(clusterName)
+	cluster, err := kaas.GetCluster(controller.K8sInstance, clusterName)
 	if err != nil {
 		log.Printf("[NodeGroupByClusterHandler] Error getting clusterAPI CR: %s", err.Error())
 		clienterr, ok := err.(*clientError.ClientError)
@@ -46,7 +44,7 @@ func (controller ControllerConfig) NodeGroupByClusterHandler(c *gin.Context) {
 		return
 	}
 
-	nodeGroup, err := controller.K8sInstance.GetNodeGroup(clusterName, nodeGroupName)
+	nodeGroup, err := kaas.GetNodeGroup(controller.K8sInstance, clusterName, nodeGroupName)
 	if err != nil {
 		log.Printf("[NodeGroupByClusterHandler] Error getting NodeGroup: %s", err.Error())
 		clienterr, ok := err.(*clientError.ClientError)
@@ -57,26 +55,7 @@ func (controller ControllerConfig) NodeGroupByClusterHandler(c *gin.Context) {
 				clientError.ErrorHandler(c, err, "Nodegroup not found", http.StatusNotFound)
 			} else if clienterr.ErrorMessage == clientError.InvalidResource {
 				clientError.ErrorHandler(c, err, "Nodegroup resource is invalid", http.StatusInternalServerError)
-			} else {
-				clientError.ErrorHandler(c, err, "Unhandled Error", http.StatusInternalServerError)
-			}
-		}
-		return
-	}
-	infra, err := controller.K8sInstance.GetNodeInfrastructure(clusterName, nodeGroup.InfrastructureKind, nodeGroup.InfrastructureName)
-	if err != nil {
-		clienterr, ok := err.(*clientError.ClientError)
-		log.Printf("[NodeGroupByClusterHandler] Error getting NodeInfrastructure: %s", err.Error())
-		if !ok {
-			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
-		} else {
-			if clienterr.ErrorMessage == clientError.ResourceNotFound {
-				newErr := clientError.NewClientError(clienterr, clientError.InvalidConfiguration, clienterr.ErrorDetailedMessage)
-				clientError.ErrorHandler(c, newErr, "Nodegroup configuration is invalid", http.StatusInternalServerError)
-			} else if clienterr.ErrorMessage == clientError.KindNotFound {
-				newErr := clientError.NewClientError(clienterr, clientError.InvalidConfiguration, clienterr.ErrorDetailedMessage)
-				clientError.ErrorHandler(c, newErr, "Nodegroup configuration is invalid", http.StatusInternalServerError)
-			} else if clienterr.ErrorMessage == clientError.InvalidResource {
+			} else if clienterr.ErrorMessage == clientError.InvalidConfiguration {
 				clientError.ErrorHandler(c, err, "Nodegroup configuration is invalid", http.StatusInternalServerError)
 			} else {
 				clientError.ErrorHandler(c, err, "Unhandled Error", http.StatusInternalServerError)
@@ -85,7 +64,7 @@ func (controller ControllerConfig) NodeGroupByClusterHandler(c *gin.Context) {
 		return
 	}
 
-	nodeGroupV1 := writeNodeGroupV1(cluster, nodeGroup, infra)
+	nodeGroupV1 := writeNodeGroupV1Response(cluster, nodeGroup)
 	c.JSON(http.StatusOK, nodeGroupV1)
 }
 
@@ -105,9 +84,9 @@ func (controller ControllerConfig) NodeGroupListByClusterHandler(c *gin.Context)
 
 	var nodegroupV1List nodegroupv1.NodeGroupList
 
-	cluster, err := controller.K8sInstance.GetCluster(clusterName)
+	cluster, err := kaas.GetCluster(controller.K8sInstance, clusterName)
 	if err != nil {
-		log.Printf("[NodeGroupListByClusterHandler] Error getting clusterAPI CR: %s", err.Error())
+		log.Printf("[NodeGroupByClusterHandler] Error getting clusterAPI CR: %s", err.Error())
 		clienterr, ok := err.(*clientError.ClientError)
 		if !ok {
 			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
@@ -121,7 +100,7 @@ func (controller ControllerConfig) NodeGroupListByClusterHandler(c *gin.Context)
 		return
 	}
 
-	nodeGroups, err := controller.K8sInstance.ListNodeGroup(clusterName)
+	nodeGroups, err := kaas.ListNodeGroups(controller.K8sInstance, clusterName)
 	if err != nil {
 		log.Printf("[NodeGroupListByClusterHandler] Error Listing Nodegroup: %s", err.Error())
 		clienterr, ok := err.(*clientError.ClientError)
@@ -138,13 +117,8 @@ func (controller ControllerConfig) NodeGroupListByClusterHandler(c *gin.Context)
 	}
 
 	for _, nodeGroup := range nodeGroups {
-		infra, err := controller.K8sInstance.GetNodeInfrastructure(clusterName, nodeGroup.InfrastructureKind, nodeGroup.InfrastructureName)
-		if err != nil {
-			log.Printf("[NodeGroupHandler] Error getting NodeInfrastructure for nodegroup %s: %s", nodeGroup.Name, err.Error())
-		} else {
-			nodeGroupV1 := writeNodeGroupV1(cluster, &nodeGroup, infra)
-			nodegroupV1List.Items = append(nodegroupV1List.Items, nodeGroupV1)
-		}
+		nodeGroupV1 := writeNodeGroupV1Response(cluster, nodeGroup)
+		nodegroupV1List.Items = append(nodegroupV1List.Items, nodeGroupV1)
 	}
 
 	if len(nodegroupV1List.Items) == 0 {
@@ -154,29 +128,24 @@ func (controller ControllerConfig) NodeGroupListByClusterHandler(c *gin.Context)
 		return
 	}
 	c.JSON(http.StatusOK, nodegroupV1List)
-
 }
 
-// TODO better function name
-// writeNodeGroupV1 Write the response of the nodeGroup version 1 endpoint
-func writeNodeGroupV1(cluster *clusterapiv1beta1.Cluster, nodeGroup *k8s.NodeGroup, nodeGroupInfrastructure *k8s.NodeInfrastructure) nodegroupv1.NodeGroup {
-
+// writeNodeGroupV1Response Write the response of the nodeGroup version 1 endpoint
+func writeNodeGroupV1Response(cluster *kaas.Cluster, nodeGroup *kaas.NodeGroup) nodegroupv1.NodeGroup {
 	metadata := &nodegroupv1.Metadata{
 		Cluster:     nodeGroup.Cluster,
 		Replicas:    nodeGroup.Replicas,
-		MachineType: nodeGroupInfrastructure.MachineType,
-		Zones:       nodeGroupInfrastructure.Az,
-		Environment: cluster.Labels["environment"],
-		Region:      cluster.Labels["region"],
-		Min:         nodeGroupInfrastructure.Min,
-		Max:         nodeGroupInfrastructure.Max,
+		MachineType: nodeGroup.Infrastructure.MachineType,
+		Zones:       nodeGroup.Infrastructure.Az,
+		Environment: cluster.Environment,
+		Region:      cluster.Region,
+		Min:         nodeGroup.Infrastructure.Min,
+		Max:         nodeGroup.Infrastructure.Max,
 	}
-
 	nodeGroupV1 := nodegroupv1.NodeGroup{
 		Name:                   nodeGroup.Name,
 		Metadata:               metadata,
-		InfrastructureProvider: nodeGroupInfrastructure.Provider,
+		InfrastructureProvider: nodeGroup.Infrastructure.Provider,
 	}
-
 	return nodeGroupV1
 }

@@ -31,7 +31,7 @@ local_resource('Populate test clusters into CAPI',
 )
 
 local_resource('Build KaaS-manager binary',
-               'make all',
+               'make build',
                deps=['Makefile'],
 )
 

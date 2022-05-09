@@ -1,4 +1,4 @@
-package k8s
+package kaas
 
 import (
 	"github.com/topfreegames/kaas-management-api/test"
@@ -32,17 +32,12 @@ func Test_GetClusterInfrastructure_Success(t *testing.T) {
 		},
 	}
 
-	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
-		DynamicClient: fakeClient,
-	}}
-
 	for _, testCase := range testCases {
 		request := testCase.GetK8sRequest()
 		expectedInfra, _ := testCase.ExpectedSuccess.(*ClusterInfrastructure)
 
 		t.Run(testCase.Name, func(t *testing.T) {
-			response, err := k.GetClusterInfrastructure(request.ResourceKind)
+			response, err := GetClusterInfrastructure(request.ResourceKind)
 			assert.NilError(t, err)
 			assert.Assert(t, reflect.DeepEqual(expectedInfra, response))
 		})
@@ -65,13 +60,8 @@ func Test_GetClusterInfrastructure_ErrorKindNotFound(t *testing.T) {
 
 	request := testCase.GetK8sRequest()
 
-	fakeClient := test.NewK8sFakeDynamicClient()
-	k := &Kubernetes{K8sAuth: &Auth{
-		DynamicClient: fakeClient,
-	}}
-
 	t.Run(testCase.Name, func(t *testing.T) {
-		_, err := k.GetControlPlane(request.ResourceKind)
+		_, err := GetControlPlane(request.ResourceKind)
 		assert.ErrorContains(t, err, testCase.ExpectedClientError.Error())
 		assert.Assert(t, test.AssertClientError(err, testCase.ExpectedClientError))
 	})
