@@ -102,7 +102,7 @@ func ListClusters(k *k8s.Kubernetes) ([]*Cluster, error) {
 	}
 
 	if len(clusterList) == 0 {
-		return nil, clientError.NewClientError(nil, clientError.EmptyResponse, "no valid clusters were found, some clusters have invalid configuration")
+		return nil, clientError.NewClientError(nil, clientError.EmptyResponse, "No valid clusters were found, some clusters have invalid configuration")
 	}
 
 	return clusterList, nil

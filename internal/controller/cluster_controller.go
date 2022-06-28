@@ -63,13 +63,13 @@ func (controller ControllerConfig) ClusterListHandler(c *gin.Context) {
 
 	clusterList, err := kaas.ListClusters(controller.K8sInstance)
 	if err != nil {
-		log.Printf("[ClusterListHandler] Error getting cluster List: %s", err.Error())
+		log.Printf("[ClusterListHandler] Error getting Cluster List: %s", err.Error())
 		clientErr, ok := err.(*clientError.ClientError)
 		if !ok {
 			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
 		} else {
 			if clientErr.ErrorMessage == clientError.ResourceNotFound {
-				clientError.ErrorHandler(c, err, "No Clusters were found", http.StatusNotFound)
+				clientError.ErrorHandler(c, err, "No clusters were found", http.StatusNotFound)
 			} else if clientErr.ErrorMessage == clientError.EmptyResponse {
 				clientError.ErrorHandler(c, err, "No clusters were found", http.StatusNotFound)
 			} else {

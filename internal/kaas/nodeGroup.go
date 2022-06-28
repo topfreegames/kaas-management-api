@@ -77,7 +77,7 @@ func (ng *NodeGroup) getNodeGroupConfig(k *k8s.Kubernetes) error {
 	if machinePoolErr != nil {
 		clientErr, ok := machinePoolErr.(*clientError.ClientError)
 		if !ok {
-			return fmt.Errorf("failed getting machinepool for node group %s in cluster %s: %s", ng.Name, ng.Cluster, machinePoolErr.Error())
+			return fmt.Errorf("failed getting MachinePool for node group %s in cluster %s: %s", ng.Name, ng.Cluster, machinePoolErr.Error())
 		}
 		if clientErr.ErrorMessage != clientError.ResourceNotFound {
 			return clientError.NewClientError(clientErr, clientError.InvalidConfiguration, fmt.Sprintf("MachinePool %s configuration is invalid", ng.Name))
@@ -94,7 +94,7 @@ func (ng *NodeGroup) getNodeGroupConfig(k *k8s.Kubernetes) error {
 	if machineDeploymentErr != nil {
 		clientErr, ok := machineDeploymentErr.(*clientError.ClientError)
 		if !ok {
-			return fmt.Errorf("failed getting machinedeployment for node group %s in cluster %s: %s", ng.Name, ng.Cluster, machinePoolErr.Error())
+			return fmt.Errorf("failed getting MachineDeployment for node group %s in cluster %s: %s", ng.Name, ng.Cluster, machinePoolErr.Error())
 		}
 		if clientErr.ErrorMessage != clientError.ResourceNotFound {
 			return clientError.NewClientError(clientErr, clientError.InvalidConfiguration, fmt.Sprintf("MachineDeployment %s configuration is invalid", ng.Name))
@@ -122,7 +122,7 @@ func ListNodeGroups(k *k8s.Kubernetes, clusterName string) ([]*NodeGroup, error)
 	if err != nil {
 		clienterr, ok := err.(*clientError.ClientError)
 		if !ok {
-			return nil, clientError.NewClientError(clienterr, clientError.UnexpectedError, fmt.Sprintf("Something went wrong while getting nodegroups configurations for cluster %s", clusterName))
+			return nil, clientError.NewClientError(clienterr, clientError.UnexpectedError, fmt.Sprintf("Something went wrong while getting NodeGroups configurations for cluster %s", clusterName))
 		} else {
 			if clienterr.ErrorMessage == clientError.ResourceNotFound {
 				return nil, clienterr
@@ -146,9 +146,9 @@ func ListNodeGroups(k *k8s.Kubernetes, clusterName string) ([]*NodeGroup, error)
 
 	if len(nodeGroups) < 1 {
 		if hasErrors {
-			return nil, clientError.NewClientError(nil, clientError.EmptyResponse, fmt.Sprintf("No valid nodegroups were found for cluster %s, some nodeGroups reported infrastructure resource errors", clusterName))
+			return nil, clientError.NewClientError(nil, clientError.EmptyResponse, fmt.Sprintf("No valid NodeGroups were found for cluster %s, some nodeGroups reported infrastructure resource errors", clusterName))
 		}
-		return nil, clientError.NewClientError(nil, clientError.EmptyResponse, fmt.Sprintf("No nodegroups were found for cluster %s", clusterName))
+		return nil, clientError.NewClientError(nil, clientError.EmptyResponse, fmt.Sprintf("No NodeGroups were found for cluster %s", clusterName))
 	}
 
 	return nodeGroups, nil
@@ -170,10 +170,10 @@ func GetNodeGroupListConfig(k *k8s.Kubernetes, clusterName string) ([]*NodeGroup
 	if machinePoolErr != nil {
 		clientErr, ok := machinePoolErr.(*clientError.ClientError)
 		if !ok {
-			nodePoolErr["machinePoolErr"] = clientError.NewClientError(machinePoolErr, clientError.UnexpectedError, fmt.Sprintf("Error while listing machinePool for all nodegroups of the cluster %s", clusterName))
+			nodePoolErr["machinePoolErr"] = clientError.NewClientError(machinePoolErr, clientError.UnexpectedError, fmt.Sprintf("Error while listing MachinePool for all NodeGroups of the cluster %s", clusterName))
 		} else {
 			if clientErr.ErrorMessage != clientError.EmptyResponse {
-				nodePoolErr["machinePoolErr"] = clientError.NewClientError(clientErr, clientError.UnexpectedError, fmt.Sprintf("Error while listing machinePool for all nodegroups of the cluster %s", clusterName))
+				nodePoolErr["machinePoolErr"] = clientError.NewClientError(clientErr, clientError.UnexpectedError, fmt.Sprintf("Error while listing MachinePool for all NodeGroups of the cluster %s", clusterName))
 			}
 		}
 	} else {
@@ -181,7 +181,7 @@ func GetNodeGroupListConfig(k *k8s.Kubernetes, clusterName string) ([]*NodeGroup
 			for _, machinePool := range machinePools.Items {
 				validationErr = k8s.ValidateMachineTemplateComponents(machinePool.Spec.Template)
 				if validationErr != nil {
-					log.Printf("skipping invalid MachinePool %s: %s", machinePool.Name, validationErr.Error())
+					log.Printf("Skipping invalid MachinePool %s: %s", machinePool.Name, validationErr.Error())
 					continue
 				}
 				nodeGroup := &NodeGroup{
@@ -207,10 +207,10 @@ func GetNodeGroupListConfig(k *k8s.Kubernetes, clusterName string) ([]*NodeGroup
 	if machineDeploymentErr != nil {
 		clientErr, ok := machineDeploymentErr.(*clientError.ClientError)
 		if !ok {
-			nodePoolErr["machineDeploymentErr"] = clientError.NewClientError(clientErr, clientError.UnexpectedError, fmt.Sprintf("Error while listing machineDeployment for all nodegroups of the cluster %s", clusterName))
+			nodePoolErr["machineDeploymentErr"] = clientError.NewClientError(clientErr, clientError.UnexpectedError, fmt.Sprintf("Error while listing MachineDeployment for all NodeGroups of the cluster %s", clusterName))
 		} else {
 			if clientErr.ErrorMessage != clientError.EmptyResponse {
-				nodePoolErr["machineDeploymentErr"] = clientError.NewClientError(machineDeploymentErr, clientErr.ErrorMessage, fmt.Sprintf("Error while listing machineDeployment for all nodegroups of the cluster %s", clusterName))
+				nodePoolErr["machineDeploymentErr"] = clientError.NewClientError(machineDeploymentErr, clientErr.ErrorMessage, fmt.Sprintf("Error while listing MachineDeployment for all NodeGroups of the cluster %s", clusterName))
 			}
 		}
 	} else {
@@ -218,7 +218,7 @@ func GetNodeGroupListConfig(k *k8s.Kubernetes, clusterName string) ([]*NodeGroup
 			for _, machineDeployment := range machineDeployments.Items {
 				validationErr = k8s.ValidateMachineTemplateComponents(machineDeployment.Spec.Template)
 				if validationErr != nil {
-					log.Printf("skipping invalid MachineDeployment %s: %s", machineDeployment.Name, validationErr.Error())
+					log.Printf("Skipping invalid MachineDeployment %s: %s", machineDeployment.Name, validationErr.Error())
 					continue
 				}
 				nodeGroup := &NodeGroup{
@@ -245,7 +245,7 @@ func GetNodeGroupListConfig(k *k8s.Kubernetes, clusterName string) ([]*NodeGroup
 
 	if nodePoolErr["machineDeploymentErr"] != nil || nodePoolErr["machinePoolErr"] != nil {
 		finalErr := fmt.Errorf(nodePoolErr["machineDeploymentErr"].Error() + " | " + nodePoolErr["machinePoolErr"].Error())
-		return nil, clientError.NewClientError(finalErr, clientError.UnexpectedError, fmt.Sprintf("Error while list infrastructure resources for cluster %s", clusterName))
+		return nil, clientError.NewClientError(finalErr, clientError.UnexpectedError, fmt.Sprintf("Error while listing infrastructure resources for cluster %s", clusterName))
 	}
 
 	return nil, clientError.NewClientError(fmt.Errorf("no nodegroup infrastructure found"), clientError.EmptyResponse, fmt.Sprintf("No NodeGroups were found in the cluster %s", clusterName))

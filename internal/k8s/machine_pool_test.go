@@ -53,11 +53,11 @@ func Test_GetMachinePool_Success(t *testing.T) {
 func Test_GetMachinePool_Error(t *testing.T) {
 	testCases := []test.TestCase{
 		{
-			Name:            "GetMachinepool should return Error for non-existent resource",
+			Name:            "GetMachinePool should return Error for non-existent resource",
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "The requested machinepool nonexistent was not found for the cluster TestCluster1!",
+				ErrorDetailedMessage: "The requested MachinePool nonexistent was not found for the cluster TestCluster1!",
 				ErrorMessage:         clientError.ResourceNotFound,
 			},
 			Request: &test.K8sRequest{
@@ -69,11 +69,11 @@ func Test_GetMachinePool_Error(t *testing.T) {
 			},
 		},
 		{
-			Name:            "GetMachinepool should return Error for non-existent cluster",
+			Name:            "GetMachinePool should return Error for non-existent cluster",
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "The requested machinepool TestMachinePool was not found for the cluster TestCluster3!",
+				ErrorDetailedMessage: "The requested MachinePool TestMachinePool was not found for the cluster TestCluster3!",
 				ErrorMessage:         clientError.ResourceNotFound,
 			},
 			Request: &test.K8sRequest{
@@ -85,7 +85,7 @@ func Test_GetMachinePool_Error(t *testing.T) {
 			},
 		},
 		{
-			Name:            "GetMachinepool should return Error for a machinePool without infrastructure",
+			Name:            "GetMachinePool should return Error for a MachinePool without infrastructure",
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
@@ -193,7 +193,7 @@ func Test_ListMachinePool_Error(t *testing.T) {
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "no Machinepools were found for the cluster TestCluster1!",
+				ErrorDetailedMessage: "no MachinePools were found for the cluster TestCluster1!",
 				ErrorMessage:         clientError.EmptyResponse,
 			},
 			Request: &test.K8sRequest{
@@ -209,7 +209,7 @@ func Test_ListMachinePool_Error(t *testing.T) {
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "no Machinepools were found for the cluster TestCluster3!",
+				ErrorDetailedMessage: "no MachinePools were found for the cluster TestCluster3!",
 				ErrorMessage:         clientError.EmptyResponse,
 			},
 			Request: &test.K8sRequest{

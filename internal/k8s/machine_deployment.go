@@ -19,9 +19,9 @@ func (k Kubernetes) GetMachineDeployment(clusterName string, machineDeploymentNa
 	machineDeploymentRaw, err := resource.Namespace(namespace).Get(context.TODO(), machineDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested machinedeployment %s was not found for the cluster %s!", machineDeploymentName, clusterName))
+			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("The requested MachineDeployment %s was not found for the cluster %s!", machineDeploymentName, clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting machinedeployment from Kubernetes API: %s\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting MachineDeployment from Kubernetes API: %s\n", statusError.ErrStatus.Message)
 		}
 		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
@@ -29,12 +29,12 @@ func (k Kubernetes) GetMachineDeployment(clusterName string, machineDeploymentNa
 	var machineDeployment clusterapiv1beta1.MachineDeployment
 	machineDeploymentRawJson, err := machineDeploymentRaw.MarshalJSON()
 	if err != nil {
-		return nil, fmt.Errorf("could not Marshal machinedeployment response: %v", err)
+		return nil, fmt.Errorf("could not Marshal MachineDeployment response: %v", err)
 	}
 
 	err = json.Unmarshal(machineDeploymentRawJson, &machineDeployment)
 	if err != nil {
-		return nil, fmt.Errorf("could not Unmarshal machinedeployment JSON into clusterAPI list: %v", err)
+		return nil, fmt.Errorf("could not Unmarshal MachineDeployment JSON into clusterAPI list: %v", err)
 	}
 
 	err = ValidateMachineTemplateComponents(machineDeployment.Spec.Template)
@@ -54,9 +54,9 @@ func (k Kubernetes) ListMachineDeployment(clusterName string) (*clusterapiv1beta
 	machineDeploymentsRaw, err := resource.Namespace(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("No machineDeployment was not found for the cluster %s!", clusterName))
+			return nil, clientError.NewClientError(err, clientError.ResourceNotFound, fmt.Sprintf("No MachineDeployment was not found for the cluster %s!", clusterName))
 		} else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-			return nil, fmt.Errorf("Error getting machinedeployment list from Kubernetes API: %v\n", statusError.ErrStatus.Message)
+			return nil, fmt.Errorf("Error getting MachineDeployment list from Kubernetes API: %v\n", statusError.ErrStatus.Message)
 		}
 		return nil, fmt.Errorf("Kube go-client Error: %v\n", err)
 	}
@@ -64,16 +64,16 @@ func (k Kubernetes) ListMachineDeployment(clusterName string) (*clusterapiv1beta
 	var machineDeployments clusterapiv1beta1.MachineDeploymentList
 	machineDeploymentsRawJson, err := machineDeploymentsRaw.MarshalJSON()
 	if err != nil {
-		return nil, fmt.Errorf("could not Marshal machinedeployment response: %v", err)
+		return nil, fmt.Errorf("could not Marshal MachineDeployment response: %v", err)
 	}
 
 	err = json.Unmarshal(machineDeploymentsRawJson, &machineDeployments)
 	if err != nil {
-		return nil, fmt.Errorf("could not Unmarshal machinedeployment JSON into clusterAPI list: %v", err)
+		return nil, fmt.Errorf("could not Unmarshal MachineDeployment JSON into clusterAPI list: %v", err)
 	}
 
 	if len(machineDeployments.Items) == 0 {
-		return nil, clientError.NewClientError(err, clientError.EmptyResponse, fmt.Sprintf("no Machinedeployments were found for the cluster %s!", clusterName))
+		return nil, clientError.NewClientError(err, clientError.EmptyResponse, fmt.Sprintf("no MachineDeployments were found for the cluster %s!", clusterName))
 	}
 
 	return &machineDeployments, nil

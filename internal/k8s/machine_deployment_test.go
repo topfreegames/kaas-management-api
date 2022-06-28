@@ -57,7 +57,7 @@ func Test_GetMachineDeployment_Error(t *testing.T) {
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "The requested machinedeployment nonexistent was not found for the cluster TestCluster1!",
+				ErrorDetailedMessage: "The requested MachineDeployment nonexistent was not found for the cluster TestCluster1!",
 				ErrorMessage:         clientError.ResourceNotFound,
 			},
 			Request: &test.K8sRequest{
@@ -73,7 +73,7 @@ func Test_GetMachineDeployment_Error(t *testing.T) {
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "The requested machinedeployment TestMachineDeployment was not found for the cluster TestCluster3!",
+				ErrorDetailedMessage: "The requested MachineDeployment TestMachineDeployment was not found for the cluster TestCluster3!",
 				ErrorMessage:         clientError.ResourceNotFound,
 			},
 			Request: &test.K8sRequest{
@@ -193,7 +193,7 @@ func Test_ListMachineDeployment_Error(t *testing.T) {
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "no Machinedeployments were found for the cluster TestCluster1!",
+				ErrorDetailedMessage: "no MachineDeployments were found for the cluster TestCluster1!",
 				ErrorMessage:         clientError.EmptyResponse,
 			},
 			Request: &test.K8sRequest{
@@ -209,7 +209,7 @@ func Test_ListMachineDeployment_Error(t *testing.T) {
 			ExpectedSuccess: nil,
 			ExpectedClientError: &clientError.ClientError{
 				ErrorCause:           nil,
-				ErrorDetailedMessage: "no Machinedeployments were found for the cluster TestCluster3!",
+				ErrorDetailedMessage: "no MachineDeployments were found for the cluster TestCluster3!",
 				ErrorMessage:         clientError.EmptyResponse,
 			},
 			Request: &test.K8sRequest{

@@ -52,11 +52,11 @@ func (controller ControllerConfig) NodeGroupByClusterHandler(c *gin.Context) {
 			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
 		} else {
 			if clienterr.ErrorMessage == clientError.ResourceNotFound {
-				clientError.ErrorHandler(c, err, "Nodegroup not found", http.StatusNotFound)
+				clientError.ErrorHandler(c, err, "Node group not found", http.StatusNotFound)
 			} else if clienterr.ErrorMessage == clientError.InvalidResource {
-				clientError.ErrorHandler(c, err, "Nodegroup resource is invalid", http.StatusInternalServerError)
+				clientError.ErrorHandler(c, err, "Node group resource is invalid", http.StatusInternalServerError)
 			} else if clienterr.ErrorMessage == clientError.InvalidConfiguration {
-				clientError.ErrorHandler(c, err, "Nodegroup configuration is invalid", http.StatusInternalServerError)
+				clientError.ErrorHandler(c, err, "Node group configuration is invalid", http.StatusInternalServerError)
 			} else {
 				clientError.ErrorHandler(c, err, "Unhandled Error", http.StatusInternalServerError)
 			}
@@ -102,13 +102,13 @@ func (controller ControllerConfig) NodeGroupListByClusterHandler(c *gin.Context)
 
 	nodeGroups, err := kaas.ListNodeGroups(controller.K8sInstance, clusterName)
 	if err != nil {
-		log.Printf("[NodeGroupListByClusterHandler] Error Listing Nodegroup: %s", err.Error())
+		log.Printf("[NodeGroupListByClusterHandler] Error Listing NodeGroup: %s", err.Error())
 		clienterr, ok := err.(*clientError.ClientError)
 		if !ok {
 			clientError.ErrorHandler(c, err, "Internal Server Error", http.StatusInternalServerError)
 		} else {
 			if clienterr.ErrorMessage == clientError.EmptyResponse {
-				clientError.ErrorHandler(c, err, fmt.Sprintf("No Nodegroups were found for the cluster %s", clusterName), http.StatusNotFound)
+				clientError.ErrorHandler(c, err, fmt.Sprintf("No node groups were found for the cluster %s", clusterName), http.StatusNotFound)
 			} else {
 				clientError.ErrorHandler(c, err, "Unhandled Error", http.StatusInternalServerError)
 			}
@@ -122,7 +122,7 @@ func (controller ControllerConfig) NodeGroupListByClusterHandler(c *gin.Context)
 	}
 
 	if len(nodegroupV1List.Items) == 0 {
-		err := clientError.NewClientError(nil, clientError.EmptyResponse, fmt.Sprintf("No Nodegroups were found for the cluster %s", clusterName))
+		err := clientError.NewClientError(nil, clientError.EmptyResponse, fmt.Sprintf("No NodeGroups were found for the cluster %s", clusterName))
 		clientErr := err.(*clientError.ClientError)
 		clientError.ErrorHandler(c, err, clientErr.ErrorDetailedMessage, http.StatusNotFound)
 		return

@@ -86,7 +86,7 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			Name:            "Error getting non-existent nodeGroup in clusterV1 endpoint should return not found",
 			ExpectedSuccess: nil,
 			ExpectedHTTPError: &apiError.ClientErrorResponse{
-				ErrorMessage: "Nodegroup not found",
+				ErrorMessage: "Node group not found",
 				ErrorType:    clientError.ResourceNotFound,
 				HttpCode:     http.StatusNotFound,
 			},
@@ -118,7 +118,7 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			Name:            "Error getting nodeGroup without infrastructure in clusterV1 endpoint should return invalid resource",
 			ExpectedSuccess: nil,
 			ExpectedHTTPError: &apiError.ClientErrorResponse{
-				ErrorMessage: "Nodegroup resource is invalid",
+				ErrorMessage: "Node group resource is invalid",
 				ErrorType:    clientError.InvalidResource,
 				HttpCode:     http.StatusInternalServerError,
 			},
@@ -136,7 +136,7 @@ func Test_NodeGroupByClusterHandler_Error(t *testing.T) {
 			Name:            "Error getting nodeGroup with invalid infrastructure kind in clusterV1 endpoint should return invalid configuration",
 			ExpectedSuccess: nil,
 			ExpectedHTTPError: &apiError.ClientErrorResponse{
-				ErrorMessage: "Nodegroup configuration is invalid",
+				ErrorMessage: "Node group configuration is invalid",
 				ErrorType:    clientError.InvalidConfiguration,
 				HttpCode:     http.StatusInternalServerError,
 			},
@@ -319,7 +319,7 @@ func Test_NodeGroupListByClusterHandler_ErrorEmptyResponse(t *testing.T) {
 			Name:            "Error getting Nodegroup list for cluster without nodegroups in clusterV1 endpoint should return empty response",
 			ExpectedSuccess: nil,
 			ExpectedHTTPError: &apiError.ClientErrorResponse{
-				ErrorMessage: "No Nodegroups were found for the cluster test-cluster3.cluster.example.com",
+				ErrorMessage: "No node groups were found for the cluster test-cluster3.cluster.example.com",
 				ErrorType:    clientError.EmptyResponse,
 				HttpCode:     http.StatusNotFound,
 			},

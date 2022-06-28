@@ -17,7 +17,7 @@ type Auth struct {
 func Authenticate() *Auth {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		log.Printf("Could not retrieve pod service Account configuration: %v", err)
+		log.Printf("Could not retrieve pod Service Account configuration: %v", err)
 		log.Print("Trying local authentication")
 		return LocalAuthenticate()
 	}
