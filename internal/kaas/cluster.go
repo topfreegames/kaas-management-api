@@ -108,6 +108,7 @@ func ListClusters(k *k8s.Kubernetes) ([]*Cluster, error) {
 	return clusterList, nil
 }
 
+// TODO do the validation on each Get method from each component
 func ValidateClusterComponents(cluster *clusterapiv1beta1.Cluster) error {
 	if cluster.Spec.InfrastructureRef == nil {
 		return clientError.NewClientError(nil, clientError.InvalidConfiguration, "Cluster doesn't have an infrastructure Reference")

@@ -9,6 +9,7 @@ type ClusterControlPlane struct {
 	Provider string
 }
 
+// TODO Change to get a Cluster CR as parameter, validate it and return all desired CP info
 // GetControlPlane returns a Control Plane resource in a generic format using the ClusterControlPlane struct
 func GetControlPlane(controlPlaneKind string) (*ClusterControlPlane, error) {
 	var controlPlane *ClusterControlPlane
