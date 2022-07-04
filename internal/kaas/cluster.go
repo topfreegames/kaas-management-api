@@ -90,10 +90,10 @@ func ListClusters(k *k8s.Kubernetes) ([]*Cluster, error) {
 		if err != nil {
 			clientErr, ok := err.(*clientError.ClientError)
 			if !ok {
-				log.Printf("An Unexpected error happened while reading cluster %s properties: %s", clusterAPICR.Name, err.Error())
+				log.Printf("Skipping cluster %s: An Unexpected error happened while reading the cluster properties: %s", clusterAPICR.Name, err.Error())
 			} else {
 				if clientErr.ErrorMessage == clientError.InvalidConfiguration {
-					log.Printf("Cluster %s is invalid due to missing or invalid labels: %s", clusterAPICR.Name, err.Error())
+					log.Printf("Skipping cluster %s: Cluster is invalid due to missing or invalid labels: %s", clusterAPICR.Name, err.Error())
 				}
 			}
 			continue
