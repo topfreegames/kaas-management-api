@@ -96,7 +96,7 @@ func Test_ClusterHandler_Error(t *testing.T) {
 			Name:            "Error getting test-cluster in clusterV1 endpoint should return invalid for non-existent infrastructure kind",
 			ExpectedSuccess: nil,
 			ExpectedHTTPError: &apiError.ClientErrorResponse{
-				ErrorMessage: "Cluster configuration is invalid",
+				ErrorMessage: "Cluster test-cluster.cluster.example.com is invalid due to missing or invalid labels",
 				ErrorType:    clientError.InvalidConfiguration,
 				HttpCode:     http.StatusInternalServerError,
 			},
@@ -113,7 +113,7 @@ func Test_ClusterHandler_Error(t *testing.T) {
 			Name:            "Error getting test-cluster in clusterV1 endpoint should return invalid for non-existent controlplane kind",
 			ExpectedSuccess: nil,
 			ExpectedHTTPError: &apiError.ClientErrorResponse{
-				ErrorMessage: "Cluster configuration is invalid",
+				ErrorMessage: "Cluster test-cluster.cluster.example.com is invalid due to missing or invalid labels",
 				ErrorType:    clientError.InvalidConfiguration,
 				HttpCode:     http.StatusInternalServerError,
 			},
